@@ -1,0 +1,20 @@
+[Desktop Entry]
+# Querencia Sitzung: Desktop-ID = GApplication-ID org.querencia.Sitzung,
+# damit labwc und die Fensterliste Titelleistensymbol und Namen finden.
+# NoDisplay: der Dialog wird über das Panel-Systemmenü und Tastenkürzel
+# geöffnet, nicht aus dem Anwendungsmenü.
+Type=Application
+Version=1.5
+Name=Querencia Sitzung
+Name[de]=Querencia Sitzung
+GenericName=Session
+GenericName[de]=Sitzung
+Comment=Log out, lock the screen, restart or shut down
+Comment[de]=Abmelden, Bildschirm sperren, Neu starten oder Herunterfahren
+Exec=querencia-sitzung --dialog
+TryExec=querencia-sitzung
+Icon=org.querencia.Sitzung
+Terminal=false
+NoDisplay=true
+Categories=GTK;System;
+StartupNotify=false

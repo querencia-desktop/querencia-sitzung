@@ -1,0 +1,29 @@
+[package]
+name = "querencia-sitzung"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+description = "Querencia Sitzung: Abmelden, Bildschirm sperren, Neu starten, Herunterfahren und Leerlaufsperre für Querencia Desktop"
+license = "GPL-3.0-or-later"
+publish = false
+
+[dependencies]
+# Dieselben Bindings wie die übrigen Querencia-Programme (gtk-rs 0.11):
+# Dialoge in GTK 4 ohne libadwaita, labwc zeichnet den Rahmen.
+gtk = { package = "gtk4", version = "0.11", features = ["v4_12"] }
+# Sperrbildschirm und Leerlaufdienst sprechen Wayland direkt
+# (ext-session-lock-v1, ext-idle-notify-v1), ohne GTK.
+wayland-client = "0.31"
+wayland-protocols = { version = "0.32", features = ["client", "staging"] }
+xkbcommon = "0.8"
+cairo-rs = { version = "0.22", features = ["png"] }
+pango = "0.22"
+pangocairo = "0.22"
+libc = "0.2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+[lints.rust]
+unused_must_use = "deny"
