@@ -55,7 +55,7 @@ q "type querencia-test" "key Return" "wait 1500"; ende
 "$BIN" --dialog --sofort >>"$OUT/d14.log" 2>&1; rc2=$?
 "$BIN" >>"$OUT/d14.log" 2>&1; rc3=$?
 [ $rc1 = 2 ] && [ $rc2 = 2 ] && [ $rc3 = 2 ] && ok "D14 falsche Argumente: Exit 2 mit Meldung" || nok "D14 Argumente ($rc1 $rc2 $rc3)"
-"$BIN" --version >"$OUT/d14-version.txt" 2>&1 && grep -q '^querencia-sitzung 0.1.0' "$OUT/d14-version.txt" && ok "D14b --version: $(cat "$OUT/d14-version.txt")" || nok "D14b --version"
+"$BIN" --version >"$OUT/d14-version.txt" 2>&1 && grep -q '^querencia-sitzung 0.1.1' "$OUT/d14-version.txt" && ok "D14b --version: $(cat "$OUT/d14-version.txt")" || nok "D14b --version"
 # D15 zweiter Aufruf holt den offenen Dialog nach vorn (eine Instanz)
 start d15 --dialog; "$BIN" --dialog >"$OUT/d15b.log" 2>&1; rc=$?
 kill -0 $P 2>/dev/null && [ $rc = 0 ] && ok "D15 zweiter --dialog-Aufruf endet sofort (Exit 0), erster Dialog bleibt" || nok "D15 zweite Instanz (Exit $rc)"

@@ -19,6 +19,7 @@ lauf() {
     cp -r "$E/data/icons/hicolor" "$PROFIL/data/icons/"
     cat >"$PROFIL/env.sh" <<X
 BIN=$BIN
+AGENT=${QS_AGENT:-$(dirname "$BIN")/querencia-polkit-agent}
 Q=$E/werkzeug/bin/qeingabe
 QA=$E/werkzeug/bin/qausgabe
 OUT=$OUT
@@ -44,6 +45,7 @@ else
     lauf szenario-dialog.sh 1 300
     lauf szenario-sperre.sh 2 300
     lauf szenario-leerlauf.sh 1 180
+    lauf szenario-polkit.sh 1 150
     lauf szenario-abmelden.sh 1 60
 fi
 echo

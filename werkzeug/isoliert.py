@@ -46,6 +46,9 @@ RC_XML = """<?xml version="1.0"?>
     <windowRule identifier="org.querencia.Sitzung*" skipTaskbar="yes" skipWindowSwitcher="yes">
       <action name="AutoPlace" policy="center" />
     </windowRule>
+    <windowRule identifier="org.querencia.PolkitAgent*" skipTaskbar="yes" skipWindowSwitcher="yes">
+      <action name="AutoPlace" policy="center" />
+    </windowRule>
   </windowRules>
 </labwc_config>
 """
