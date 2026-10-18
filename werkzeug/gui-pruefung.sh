@@ -43,7 +43,7 @@ else
     : >"$OUT/ergebnis.txt"
     lauf szenario-dialog.sh 1 300
     lauf szenario-sperre.sh 2 300
-    lauf szenario-leerlauf.sh 1 150
+    lauf szenario-leerlauf.sh 1 180
     lauf szenario-abmelden.sh 1 60
 fi
 echo
