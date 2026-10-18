@@ -142,7 +142,7 @@ fn knopf(beschriftung: &str, symbole: &[&str]) -> gtk::Button {
 
 fn css_laden() {
     let css = gtk::CssProvider::new();
-    css.load_from_string("window.qs-dialog button { padding: 4px 12px; min-width: 96px; }");
+    css.load_from_string("window.qs-dialog button { padding: 4px 10px; min-width: 72px; }");
     if let Some(display) = gdk::Display::default() {
         gtk::style_context_add_provider_for_display(
             &display,
@@ -192,7 +192,6 @@ fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>
 
     let knoepfe = gtk::Box::new(gtk::Orientation::Horizontal, 6);
     knoepfe.set_halign(gtk::Align::End);
-    knoepfe.set_homogeneous(true);
     let mut abbrechen = None;
     for eintrag in &aufbau.knoepfe {
         let button = match eintrag {

@@ -432,9 +432,22 @@ fn farbe(cr: &cairo::Context, (r, g, b): (f64, f64, f64)) {
     cr.set_source_rgb(r, g, b);
 }
 
-fn text_zentriert(cr: &cairo::Context, x: f64, y: f64, schrift: &str, text: &str) -> f64 {
+/// Pango-Layout mit Graustufen-Kantenglättung (kein Subpixel-Farbsaum auf
+/// dem Anthrazit-Hintergrund).
+fn layout(cr: &cairo::Context, schrift: &str) -> pango::Layout {
     let layout = pangocairo::functions::create_layout(cr);
+    let mut optionen = cairo::FontOptions::new().ok();
+    if let Some(o) = &mut optionen {
+        o.set_antialias(cairo::Antialias::Gray);
+        o.set_hint_style(cairo::HintStyle::Slight);
+        pangocairo::functions::context_set_font_options(&layout.context(), Some(o));
+    }
     layout.set_font_description(Some(&pango::FontDescription::from_string(schrift)));
+    layout
+}
+
+fn text_zentriert(cr: &cairo::Context, x: f64, y: f64, schrift: &str, text: &str) -> f64 {
+    let layout = layout(cr, schrift);
     layout.set_text(text);
     let (b, h) = layout.pixel_size();
     cr.move_to(x - b as f64 / 2.0, y);
@@ -506,8 +519,7 @@ fn malen(cr: &cairo::Context, b: f64, h: f64, inhalt: &Inhalt) {
     let _ = cr.stroke();
     if inhalt.passwort_laenge == 0 {
         farbe(cr, GEDIMMT);
-        let layout = pangocairo::functions::create_layout(cr);
-        layout.set_font_description(Some(&pango::FontDescription::from_string("DejaVu Sans 12")));
+        let layout = layout(cr, "DejaVu Sans 12");
         layout.set_text(if inhalt.prueft { "…" } else { "Passwort" });
         let (_, th) = layout.pixel_size();
         cr.move_to(fx + 12.0, y + (feld_h - th as f64) / 2.0);
@@ -829,7 +841,7 @@ fn sperren() -> Result<i32, String> {
     let benutzer = std::env::var("USER")
         .ok()
         .filter(|u| !u.is_empty())
-        .or_else(|| benutzername_aus_uid())
+        .or_else(benutzername_aus_uid)
         .ok_or_else(|| "Benutzername unbekannt (USER)".to_string())?;
     let testpasswort = testpasswort(
         crate::aktion::trockenlauf(),
