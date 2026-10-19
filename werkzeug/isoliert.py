@@ -19,14 +19,25 @@ import sys
 import tempfile
 import time
 
-LABWC = "~/opt/labwc-0.9.8/bin/labwc"
+# labwc 0.9.8: QUERENCIA_LABWC, sonst der Eigenbau unter ~/opt/labwc-0.9.8
+# (Entwicklungs-VM), sonst labwc aus dem PATH.
+def _labwc() -> str:
+    for p in (os.environ.get("QUERENCIA_LABWC"),
+              os.path.expanduser("~/opt/labwc-0.9.8/bin/labwc"),
+              shutil.which("labwc")):
+        if p and os.access(p, os.X_OK):
+            return os.path.realpath(p)
+    return "labwc"
+
+
+LABWC = _labwc()
 HIER = os.path.dirname(os.path.abspath(__file__))
 LAUFZEIT = os.path.join(os.path.dirname(HIER), "laufzeit")
 
 
 def _session_labwc(pid: str) -> bool:
     try:
-        if os.readlink(f"/proc/{pid}/exe") != LABWC:
+        if os.path.basename(os.readlink(f"/proc/{pid}/exe")) != "labwc":
             return False
         with open(f"/proc/{pid}/environ", "rb") as f:
             env = f.read().split(b"\0")
@@ -66,7 +77,8 @@ def main() -> int:
         with open(rc, "w") as f:
             f.write(RC_XML)
     theme = os.path.join(profile, "data/themes/Querencia-Klassisch")
-    live_theme = "~/.local/share/themes/Querencia-Klassisch"
+    live_theme = os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"),
+                              "themes/Querencia-Klassisch")
     if not os.path.exists(theme) and os.path.isdir(live_theme):
         os.symlink(os.path.realpath(live_theme), theme)
     # PT-1 (nach SW-6, QD-037): keine Portale im Wegwerf-Bus. Sonst startet
@@ -101,7 +113,7 @@ def main() -> int:
     env = {k: v for k, v in os.environ.items()
            if not k.startswith(("WAYLAND", "DBUS", "DISPLAY", "XDG_", "LABWC", "SWAYSOCK"))}
     env.update({
-        "HOME": "~",
+        "HOME": os.path.expanduser("~"),
         "XDG_RUNTIME_DIR": runtime,
         "XDG_CONFIG_HOME": os.path.join(profile, "config"),
         "XDG_DATA_HOME": os.path.join(profile, "data"),

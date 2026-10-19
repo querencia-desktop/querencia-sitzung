@@ -173,7 +173,7 @@ mod tests {
 
     fn exe_of(pid: u32) -> Option<PathBuf> {
         match pid {
-            1816 => Some(PathBuf::from("~/opt/labwc-0.9.8/bin/labwc")),
+            1816 => Some(PathBuf::from("/home/user/opt/labwc-0.9.8/bin/labwc")),
             42 => Some(PathBuf::from("/usr/bin/labwc")),
             7 => Some(PathBuf::from("/usr/bin/bash")),
             _ => None,
@@ -184,7 +184,7 @@ mod tests {
     fn labwc_der_sitzung_wird_gefunden() {
         assert_eq!(
             labwc_exit_command(Some("1816"), exe_of).as_deref(),
-            Some(Path::new("~/opt/labwc-0.9.8/bin/labwc"))
+            Some(Path::new("/home/user/opt/labwc-0.9.8/bin/labwc"))
         );
         assert_eq!(
             labwc_exit_command(Some("42"), exe_of).as_deref(),

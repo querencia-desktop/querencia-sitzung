@@ -1,9 +1,9 @@
 [Desktop Entry]
 # Querencia Sitzung: Desktop-ID = GApplication-ID org.querencia.Sitzung,
 # damit labwc und die Fensterliste Titelleistensymbol und Namen finden.
-# Exec/TryExec absolut über den Link in ~/opt/querencia/bin wie bei den
-# anderen Querencia-Einträgen: GIO verwirft Einträge, deren TryExec nicht
-# im PATH liegt (der Sitzungs-PATH enthält ~/opt/querencia/bin nicht).
+# Exec/TryExec ohne Pfad: installiert liegt das Programm im PATH. Liegt es
+# außerhalb des PATH, Exec/TryExec beim Installieren absolut setzen, denn
+# GIO verwirft Einträge, deren TryExec nicht im PATH liegt.
 # NoDisplay: der Dialog wird über das Panel-Systemmenü und Tastenkürzel
 # geöffnet, nicht aus dem Anwendungsmenü.
 Type=Application
@@ -14,8 +14,8 @@ GenericName=Session
 GenericName[de]=Sitzung
 Comment=Log out, lock the screen, restart or shut down
 Comment[de]=Abmelden, Bildschirm sperren, Neu starten oder Herunterfahren
-Exec=~/opt/querencia/bin/querencia-sitzung --dialog
-TryExec=~/opt/querencia/bin/querencia-sitzung
+Exec=querencia-sitzung --dialog
+TryExec=querencia-sitzung
 Icon=org.querencia.Sitzung
 Terminal=false
 NoDisplay=true
