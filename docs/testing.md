@@ -60,20 +60,28 @@ Für `LANGUAGE=de` braucht die Binary den Katalog daneben
 überschreiben die eingecheckten Belege, danach
 `git checkout -- nachweis/ && git clean -fq nachweis/gui/`.
 
-## Countdown und Abmelden (0.1.3, G2-AI, QD-062)
+## Rückfragen ohne Countdown, Abmelden (0.1.3, G2-AI, QD-062)
 
 ```bash
-QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-g2ai.sh 1 220           # C01–C06, Trockenlauf
-QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-g2ai-abmelden.sh 1 60   # A02a–d, echtes Abmelden im isolierten labwc
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-g2ai.sh 1 220           # C01–C08, Trockenlauf
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-g2ai-abmelden.sh 1 60   # A02a–e, echtes Abmelden im isolierten labwc
 ```
 
-- C01–C06: Der Countdown zählt nur mit Fokus. Ein kleines `foot`-Fenster
-  („fokusdieb“) nimmt den Fokus. Nach 60 s ohne Fokus bricht der Dialog ab.
-  `sitzung.ini` mit `Countdown=aus` schaltet den Countdown ab; die
-  Befehlszeile geht vor.
-- A02: Der Dialog beendet fünf Sitzungsprogramme, darunter Platzhalter aus
-  `werkzeug/platzhalter.c` (einer ignoriert SIGTERM). Köder müssen bleiben:
-  gleiches Programm mit anderer `LABWC_PID` und ein Benutzerprogramm.
-  Erst danach folgt `labwc --exit`.
+- **C04/C05 (Vorgabe):** kein Countdown. Die Rückfrage wartet; Enter auf dem
+  Standardknopf „Abbrechen“ löst nichts aus.
+- **C01–C03, C06, C07 (nur auf Wunsch):**
+  - Der Countdown gilt mit `--countdown` oder `sitzung.ini` `Countdown=an`.
+  - Er zählt nur mit Fokus. Ein kleines `foot`-Fenster („fokusdieb“) nimmt
+    den Fokus.
+  - Nach 60 s ohne Fokus bricht der Dialog ab.
+- **C08:** `--kein-countdown` endet mit Exit 2, die Option gibt es nicht mehr.
+- **A02:**
+  - Der Dialog beendet fünf Sitzungsprogramme, darunter Platzhalter aus
+    `werkzeug/platzhalter.c`; einer ignoriert SIGTERM.
+  - Danach stoppt er die Portale. Im isolierten Lauf erreicht
+    `systemctl --user` keinen User-Manager; das wird nur protokolliert.
+  - Erst dann folgt `labwc --exit`.
+  - Die Köder bleiben: dasselbe Programm mit anderer `LABWC_PID` und ein
+    Benutzerprogramm.
 - Ohne Eingabegerät hat der headless labwc keine Tastatur am Sitz, dann wird
   kein Fenster aktiv. `eingabe.sh` steckt eine virtuelle Tastatur an.
