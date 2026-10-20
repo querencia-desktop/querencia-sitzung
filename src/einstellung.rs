@@ -14,7 +14,7 @@
 
 use std::path::PathBuf;
 
-/// Countdown ohne Eintrag in der Datei: aus (Entscheidung von pottrauschen,
+/// Countdown ohne Eintrag in der Datei: aus (Entscheidung des Besitzers,
 /// 20.10.2026: „lass countdown weg“).
 pub const COUNTDOWN_VORGABE: bool = false;
 
@@ -81,7 +81,7 @@ mod tests {
         assert_eq!(countdown_aus_text("[Dialog]\nCountdown=aus\n"), Some(false));
         assert_eq!(countdown_aus_text("[Dialog]\nCountdown = an\n"), Some(true));
         assert_eq!(
-            countdown_aus_text("[Dialog]\nCountdown=AUS # pottrauschen\n"),
+            countdown_aus_text("[Dialog]\nCountdown=AUS # Notiz\n"),
             Some(false)
         );
         assert_eq!(countdown_aus_text("[Anderes]\nCountdown=aus\n"), None);

@@ -1,5 +1,5 @@
 #!/bin/bash
-# G2-AI (QD-062): Vorgabe ohne Countdown (Entscheidung pottrauschen 20.10.),
+# G2-AI (QD-062): Vorgabe ohne Countdown (Entscheidung des Besitzers 20.10.),
 # Countdown nur auf Wunsch (--countdown, sitzung.ini Countdown=an), dann nur
 # mit Fokus und Abbruch nach 60 s ohne Fokus. Alles im Trockenlauf.
 . "$(dirname "$0")/gemeinsam.sh"

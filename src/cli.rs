@@ -10,7 +10,7 @@
 //! ```
 //!
 //! Kein Dialog zählt von selbst herunter: Sie warten, bis jemand wählt
-//! (Entscheidung von pottrauschen, 20.10.2026, QD-062). Den Countdown gibt es nur
+//! (Entscheidung des Besitzers, 20.10.2026, QD-062). Den Countdown gibt es nur
 //! auf Wunsch: `--countdown SEK` oder `[Dialog] Countdown=an` in
 //! `sitzung.ini` (dann 60 s wie GNOME 2 für die Rückfragen).
 

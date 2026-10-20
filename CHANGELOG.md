@@ -5,8 +5,8 @@
 Sauberes Abmelden, Rückfragen ohne Countdown (QD-062, G2-AI):
 
 - Abmelden, Neu starten, Herunterfahren und der Gesamtdialog zählen nicht
-  mehr von selbst herunter. Sie warten, bis jemand wählt (Entscheidung von
-  pottrauschen, 20.10.2026: „lass countdown weg“). „Abbrechen“ bleibt der
+  mehr von selbst herunter. Sie warten, bis jemand wählt (Entscheidung des
+  Besitzers, 20.10.2026: „lass countdown weg“). „Abbrechen“ bleibt der
   Standardknopf für Esc und Enter. Am 20.10. hatte ein stehengelassener
   Dialog hinter einem anderen Fenster nach 60 s abgemeldet.
 - Den Countdown gibt es nur noch auf Wunsch: `--countdown SEK` oder
