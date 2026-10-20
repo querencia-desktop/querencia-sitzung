@@ -197,6 +197,60 @@ mod tests {
         assert!(!std::path::Path::new(&format!("/proc/{pid}")).exists());
     }
 
+    /// Mehrfach „sperren und entsperren“ mit einer Sperr-Attrappe (kurzer
+    /// `sleep` statt `--sperren --sofort`) über denselben Weg wie der Dienst:
+    /// danach hat dieser Prozess kein Zombie-Kind (`ps` ohne `<defunct>`).
+    #[test]
+    fn mehrfach_sperren_hinterlaesst_keinen_zombie() {
+        let mut leerlauf = Leerlauf {
+            sperre: None,
+            gesperrt_mal: 0,
+        };
+        let mut pids = Vec::new();
+        for _ in 0..5 {
+            assert!(!leerlauf.sperre_laeuft(), "Attrappe läuft noch");
+            let kind = Command::new("sleep")
+                .arg("0.2")
+                .stdin(Stdio::null())
+                .spawn()
+                .expect("sleep startbar");
+            pids.push(kind.id());
+            leerlauf.sperre = Some(ernten(kind));
+            leerlauf.gesperrt_mal += 1;
+            let start = Instant::now();
+            while leerlauf.sperre_laeuft() {
+                assert!(start.elapsed() < Duration::from_secs(10), "nicht geerntet");
+                std::thread::sleep(Duration::from_millis(20));
+            }
+        }
+        assert_eq!(leerlauf.gesperrt_mal, 5);
+        let ps = Command::new("ps")
+            .args([
+                "-o",
+                "pid=,stat=",
+                "--ppid",
+                &std::process::id().to_string(),
+            ])
+            .output()
+            .expect("ps startbar");
+        let kinder = String::from_utf8_lossy(&ps.stdout);
+        for pid in &pids {
+            assert!(
+                !kinder
+                    .lines()
+                    .any(|l| l.split_whitespace().next() == Some(&pid.to_string())),
+                "Attrappe {pid} noch da (Zombie?): {kinder}"
+            );
+        }
+        assert!(
+            !kinder.lines().any(|l| l
+                .split_whitespace()
+                .nth(1)
+                .is_some_and(|s| s.starts_with('Z'))),
+            "Zombie-Kind: {kinder}"
+        );
+    }
+
     #[test]
     fn laufendes_kind_gilt_als_laufend() {
         let mut leerlauf = Leerlauf {
