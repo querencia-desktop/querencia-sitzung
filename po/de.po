@@ -29,44 +29,44 @@ msgstr "Sitzung"
 msgid "Log out, lock the screen, restart or shut down"
 msgstr "Abmelden, Bildschirm sperren, Neu starten oder Herunterfahren"
 
-#: src/aktion.rs:60
+#: src/aktion.rs:63
 msgid "Cannot log out: no labwc of this session (LABWC_PID)"
 msgstr "Abmelden nicht möglich: kein labwc dieser Sitzung (LABWC_PID)"
 
-#: src/aktion.rs:70
+#: src/aktion.rs:79
 #, no-c-format
 msgid "{program} --exit failed: {error}"
 msgstr "{program} --exit fehlgeschlagen: {error}"
 
-#: src/aktion.rs:82
+#: src/aktion.rs:91
 #, no-c-format
 msgid "{program} --exit reported {status}"
 msgstr "{program} --exit meldet {status}"
 
 #. TRANSLATORS: {action} ist „Restart“ oder „Shut Down“.
-#: src/aktion.rs:99
+#: src/aktion.rs:108
 #, no-c-format
 msgid ""
 "{action} is not allowed for this user (logind: no). Please run it at the console or as an administrator."
 msgstr ""
 "{action} ist für diesen Benutzer nicht erlaubt (logind: no). Bitte an der Konsole oder als Administrator ausführen."
 
-#: src/aktion.rs:104
+#: src/aktion.rs:113
 #, no-c-format
 msgid "{action} is not possible on this system (logind: na)."
 msgstr "{action} ist auf diesem System nicht möglich (logind: na)."
 
-#: src/aktion.rs:108
+#: src/aktion.rs:117
 #, no-c-format
 msgid "{action}: unexpected answer from logind: “{answer}”"
 msgstr "{action}: unerwartete Antwort von logind: „{answer}“"
 
-#: src/aktion.rs:122
+#: src/aktion.rs:131
 #, no-c-format
 msgid "System D-Bus not reachable: {error}"
 msgstr "System-D-Bus nicht erreichbar: {error}"
 
-#: src/aktion.rs:179
+#: src/aktion.rs:188
 #, no-c-format
 msgid "Cannot start the lock screen ({program}): {error}"
 msgstr "Sperrbildschirm nicht startbar ({program}): {error}"
@@ -94,7 +94,7 @@ msgstr "Passwort für {user}:"
 msgid "Connecting to the authentication service…"
 msgstr "Verbindung zum Legitimierungsdienst …"
 
-#: src/bin/querencia-polkit-agent.rs:306 src/dialog.rs:254
+#: src/bin/querencia-polkit-agent.rs:306 src/dialog.rs:323
 msgid "_Cancel"
 msgstr "_Abbrechen"
 
@@ -209,20 +209,25 @@ msgid_plural "This system will be automatically shut down in {n} seconds."
 msgstr[0] "Der Rechner wird in {n} Sekunde automatisch heruntergefahren."
 msgstr[1] "Der Rechner wird in {n} Sekunden automatisch heruntergefahren."
 
-#: src/dialog.rs:132
+#. TRANSLATORS: steht unter der Countdown-Zeile, solange ein anderes Fenster aktiv ist.
+#: src/dialog.rs:181
+msgid "Paused while this window is not active."
+msgstr "Angehalten, solange dieses Fenster nicht aktiv ist."
+
+#: src/dialog.rs:201
 msgid "End Session"
 msgstr "Sitzung beenden"
 
-#: src/dialog.rs:133
+#: src/dialog.rs:202
 msgid "End this session now?"
 msgstr "Diese Sitzung jetzt beenden?"
 
-#: src/dialog.rs:134
+#: src/dialog.rs:203
 msgid ""
 "Log Out closes all applications of this session; Restart and Shut Down stop the computer. Anything not saved will be lost."
 msgstr ""
 "Abmelden beendet alle Anwendungen dieser Sitzung; Neu starten und Herunterfahren beenden den Rechner. Was nicht gespeichert ist, geht verloren."
 
-#: src/dialog.rs:384
+#: src/dialog.rs:494
 msgid "_Close"
 msgstr "_Schließen"

@@ -112,6 +112,75 @@ pub fn countdown_text(aktion: Aktion, sekunden: u32) -> String {
     }
 }
 
+/// Höchstens so viele Sekunden am Stück ohne Fokus, dann bricht ein Dialog
+/// mit Countdown ab (QD-062).
+pub const OHNE_FOKUS_MAX: u32 = 60;
+
+/// Was nach einer Sekunde des Countdowns geschieht.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Schritt {
+    /// Mit Fokus heruntergezählt; noch `rest` Sekunden.
+    Weiter { rest: u32 },
+    /// Ohne Fokus angehalten, seit `sekunden` Sekunden am Stück.
+    Angehalten { sekunden: u32 },
+    /// Abgelaufen: die Aktion ausführen.
+    Ausloesen,
+    /// [`OHNE_FOKUS_MAX`] Sekunden ohne Fokus: abbrechen.
+    Abbrechen,
+}
+
+/// Countdown, der nur zählt, solange der Dialog den Fokus hat (QD-062).
+/// Am 20.10.2026 lief ein stehengelassener Abmelden-Dialog hinter einem
+/// anderen Fenster ab und meldete ab. Jetzt hält der Countdown an, sobald
+/// ein anderes Fenster aktiv ist, zählt bei Rückkehr weiter und bricht nach
+/// [`OHNE_FOKUS_MAX`] Sekunden ohne Fokus ab (wie „Abbrechen“).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Zaehler {
+    rest: u32,
+    ohne_fokus: u32,
+}
+
+impl Zaehler {
+    pub fn neu(sekunden: u32) -> Self {
+        Self {
+            rest: sekunden,
+            ohne_fokus: 0,
+        }
+    }
+
+    /// Eine Sekunde ist vergangen; `fokus`: der Dialog war aktiv.
+    pub fn sekunde(&mut self, fokus: bool) -> Schritt {
+        if !fokus {
+            self.ohne_fokus += 1;
+            return if self.ohne_fokus >= OHNE_FOKUS_MAX {
+                Schritt::Abbrechen
+            } else {
+                Schritt::Angehalten {
+                    sekunden: self.ohne_fokus,
+                }
+            };
+        }
+        self.ohne_fokus = 0;
+        self.rest = self.rest.saturating_sub(1);
+        if self.rest == 0 {
+            Schritt::Ausloesen
+        } else {
+            Schritt::Weiter { rest: self.rest }
+        }
+    }
+
+    pub fn rest(&self) -> u32 {
+        self.rest
+    }
+}
+
+/// Zeile unter dem Countdown, solange er angehalten ist.
+pub fn angehalten_text() -> String {
+    // TRANSLATORS: steht unter der Countdown-Zeile, solange ein anderes
+    // Fenster aktiv ist.
+    gettext("Paused while this window is not active.")
+}
+
 /// Aufbau eines Dialogs: Titel, Texte, angebotene Aktionen, Countdown-Ziel.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Aufbau {
@@ -300,7 +369,27 @@ fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>
     if let Some((aktion, sekunden)) = aufbau.countdown {
         countdown.set_label(&countdown_text(aktion, sekunden));
         countdown.set_visible(true);
-        let rest = Rc::new(Cell::new(sekunden));
+        let zaehler = Rc::new(Cell::new(Zaehler::neu(sekunden)));
+        // Fokuswechsel sofort anzeigen, nicht erst beim nächsten Takt.
+        window.connect_is_active_notify(glib::clone!(
+            #[weak]
+            countdown,
+            #[strong]
+            zaehler,
+            move |w| {
+                let rest = zaehler.get().rest();
+                if w.is_active() {
+                    countdown.set_label(&countdown_text(aktion, rest));
+                } else {
+                    countdown.set_label(&format!(
+                        "{}\n{}",
+                        countdown_text(aktion, rest),
+                        angehalten_text()
+                    ));
+                }
+            }
+        ));
+        let war_aktiv = Rc::new(Cell::new(true));
         glib::timeout_add_seconds_local(
             1,
             glib::clone!(
@@ -313,15 +402,36 @@ fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>
                 #[upgrade_or]
                 glib::ControlFlow::Break,
                 move || {
-                    let n = rest.get().saturating_sub(1);
-                    rest.set(n);
-                    if n == 0 {
-                        wahl.set(Some(aktion));
-                        window.close();
-                        return glib::ControlFlow::Break;
+                    let mut z = zaehler.get();
+                    let aktiv = window.is_active();
+                    let schritt = z.sekunde(aktiv);
+                    zaehler.set(z);
+                    if aktiv != war_aktiv.replace(aktiv) {
+                        crate::aktion::protokoll(if aktiv {
+                            "Countdown läuft weiter (Fenster aktiv)"
+                        } else {
+                            "Countdown angehalten (Fenster nicht aktiv)"
+                        });
                     }
-                    countdown.set_label(&countdown_text(aktion, n));
-                    glib::ControlFlow::Continue
+                    match schritt {
+                        Schritt::Weiter { rest } => {
+                            countdown.set_label(&countdown_text(aktion, rest));
+                            glib::ControlFlow::Continue
+                        }
+                        Schritt::Angehalten { .. } => glib::ControlFlow::Continue,
+                        Schritt::Ausloesen => {
+                            wahl.set(Some(aktion));
+                            window.close();
+                            glib::ControlFlow::Break
+                        }
+                        Schritt::Abbrechen => {
+                            crate::aktion::protokoll(&format!(
+                                "Countdown: {OHNE_FOKUS_MAX} s ohne Fokus, Dialog abgebrochen"
+                            ));
+                            window.close();
+                            glib::ControlFlow::Break
+                        }
+                    }
                 }
             ),
         );
@@ -474,6 +584,45 @@ mod tests {
         );
         assert!(countdown_text(Aktion::Herunterfahren, 5).contains("shut down"));
         assert!(countdown_text(Aktion::Sperren, 5).contains("locked"));
+    }
+
+    #[test]
+    fn countdown_zaehlt_nur_mit_fokus() {
+        let mut z = Zaehler::neu(3);
+        assert_eq!(z.sekunde(true), Schritt::Weiter { rest: 2 });
+        assert_eq!(z.sekunde(false), Schritt::Angehalten { sekunden: 1 });
+        assert_eq!(z.sekunde(false), Schritt::Angehalten { sekunden: 2 });
+        assert_eq!(z.rest(), 2);
+        assert_eq!(z.sekunde(true), Schritt::Weiter { rest: 1 });
+        assert_eq!(z.sekunde(true), Schritt::Ausloesen);
+    }
+
+    #[test]
+    fn countdown_bricht_nach_sechzig_sekunden_ohne_fokus_ab() {
+        let mut z = Zaehler::neu(60);
+        for s in 1..OHNE_FOKUS_MAX {
+            assert_eq!(z.sekunde(false), Schritt::Angehalten { sekunden: s });
+        }
+        assert_eq!(z.sekunde(false), Schritt::Abbrechen);
+        assert_eq!(z.rest(), 60, "ohne Fokus nichts heruntergezählt");
+    }
+
+    #[test]
+    fn fokus_setzt_die_frist_ohne_fokus_zurueck() {
+        let mut z = Zaehler::neu(600);
+        for _ in 0..OHNE_FOKUS_MAX - 1 {
+            z.sekunde(false);
+        }
+        assert_eq!(z.sekunde(true), Schritt::Weiter { rest: 599 });
+        for s in 1..OHNE_FOKUS_MAX {
+            assert_eq!(z.sekunde(false), Schritt::Angehalten { sekunden: s });
+        }
+        assert_eq!(z.sekunde(false), Schritt::Abbrechen);
+    }
+
+    #[test]
+    fn angehalten_hat_einen_text() {
+        assert_eq!(angehalten_text(), "Paused while this window is not active.");
     }
 
     #[test]

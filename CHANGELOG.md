@@ -1,5 +1,26 @@
 # Änderungen
 
+## 0.1.3 – 2026-10-20
+
+Sauberes Abmelden, Countdown nur mit Fokus (QD-062, G2-AI):
+
+- Der Countdown von Abmelden, Neu starten, Herunterfahren und dem
+  Gesamtdialog zählt nur, solange der Dialog aktiv ist. Ist ein anderes
+  Fenster aktiv, hält er an („Angehalten, solange dieses Fenster nicht
+  aktiv ist.“). Nach 60 s am Stück ohne Fokus bricht der Dialog ab wie mit
+  „Abbrechen“. Am 20.10.2026 hatte ein stehengelassener Dialog hinter
+  einem anderen Fenster abgemeldet.
+- `~/.config/querencia/sitzung.ini` mit `[Dialog]` `Countdown=aus` schaltet
+  den Countdown für alle Dialoge ab. `--countdown` und `--kein-countdown`
+  gehen vor. Ohne Datei bleibt der Countdown an. Das Programm schreibt die
+  Datei nie.
+- Abmelden beendet vor `labwc --exit` die Programme der Sitzung: Panel,
+  Arbeitsfläche, Benachrichtigungen, polkit-Agent, Leerlaufdienst und die
+  Applet-Helfer. Erkannt werden sie an `LABWC_PID` oder an den PID-Dateien
+  des Starters. Ablauf: SIGTERM, 2 s Frist, dann SIGKILL. Programme
+  anderer Sitzungen und vom Benutzer gestartete Programme bleiben
+  unberührt. Im Trockenlauf wird nur die Liste protokolliert.
+
 ## 0.1.2 – 2026-10-20
 
 Englisch und Deutsch über GNU gettext, Kindprozesse geerntet (G2-AH):

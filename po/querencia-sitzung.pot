@@ -32,43 +32,43 @@ msgstr ""
 msgid "Log out, lock the screen, restart or shut down"
 msgstr ""
 
-#: src/aktion.rs:60
+#: src/aktion.rs:63
 msgid "Cannot log out: no labwc of this session (LABWC_PID)"
 msgstr ""
 
-#: src/aktion.rs:70
+#: src/aktion.rs:79
 #, no-c-format
 msgid "{program} --exit failed: {error}"
 msgstr ""
 
-#: src/aktion.rs:82
+#: src/aktion.rs:91
 #, no-c-format
 msgid "{program} --exit reported {status}"
 msgstr ""
 
 #. TRANSLATORS: {action} ist „Restart“ oder „Shut Down“.
-#: src/aktion.rs:99
+#: src/aktion.rs:108
 #, no-c-format
 msgid ""
 "{action} is not allowed for this user (logind: no). Please run it at the console or as an administrator."
 msgstr ""
 
-#: src/aktion.rs:104
+#: src/aktion.rs:113
 #, no-c-format
 msgid "{action} is not possible on this system (logind: na)."
 msgstr ""
 
-#: src/aktion.rs:108
+#: src/aktion.rs:117
 #, no-c-format
 msgid "{action}: unexpected answer from logind: “{answer}”"
 msgstr ""
 
-#: src/aktion.rs:122
+#: src/aktion.rs:131
 #, no-c-format
 msgid "System D-Bus not reachable: {error}"
 msgstr ""
 
-#: src/aktion.rs:179
+#: src/aktion.rs:188
 #, no-c-format
 msgid "Cannot start the lock screen ({program}): {error}"
 msgstr ""
@@ -96,7 +96,7 @@ msgstr ""
 msgid "Connecting to the authentication service…"
 msgstr ""
 
-#: src/bin/querencia-polkit-agent.rs:306 src/dialog.rs:254
+#: src/bin/querencia-polkit-agent.rs:306 src/dialog.rs:323
 msgid "_Cancel"
 msgstr ""
 
@@ -208,19 +208,24 @@ msgid_plural "This system will be automatically shut down in {n} seconds."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/dialog.rs:132
+#. TRANSLATORS: steht unter der Countdown-Zeile, solange ein anderes Fenster aktiv ist.
+#: src/dialog.rs:181
+msgid "Paused while this window is not active."
+msgstr ""
+
+#: src/dialog.rs:201
 msgid "End Session"
 msgstr ""
 
-#: src/dialog.rs:133
+#: src/dialog.rs:202
 msgid "End this session now?"
 msgstr ""
 
-#: src/dialog.rs:134
+#: src/dialog.rs:203
 msgid ""
 "Log Out closes all applications of this session; Restart and Shut Down stop the computer. Anything not saved will be lost."
 msgstr ""
 
-#: src/dialog.rs:384
+#: src/dialog.rs:494
 msgid "_Close"
 msgstr ""

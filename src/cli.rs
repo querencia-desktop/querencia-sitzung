@@ -190,6 +190,25 @@ where
     })
 }
 
+/// Ob `args` den Countdown ausdrücklich festlegen (`--countdown` oder
+/// `--kein-countdown`); dann gilt die Befehlszeile, nicht `sitzung.ini`.
+pub fn countdown_ausdruecklich<S: AsRef<str>>(args: &[S]) -> bool {
+    args.iter()
+        .any(|a| matches!(a.as_ref(), "--countdown" | "--kein-countdown"))
+}
+
+/// `befehl` ohne Countdown.
+pub fn ohne_countdown(befehl: Befehl) -> Befehl {
+    match befehl {
+        Befehl::Dialog { .. } => Befehl::Dialog { countdown: None },
+        Befehl::Rueckfrage { aktion, .. } => Befehl::Rueckfrage {
+            aktion,
+            countdown: None,
+        },
+        andere => andere,
+    }
+}
+
 pub const HILFE: &str = "\
 Aufruf: querencia-sitzung BEFEHL [OPTIONEN]
 
@@ -207,6 +226,9 @@ Befehle (genau einer):
 Optionen:
   --countdown SEK     Countdown in Sekunden (1 bis 3600)
   --kein-countdown    kein automatisches Auslösen
+  Der Countdown zählt nur, solange der Dialog aktiv ist, und bricht nach
+  60 s ohne Fokus ab. Abschalten für alle Dialoge: ~/.config/querencia/
+  sitzung.ini mit [Dialog] Countdown=aus (die Befehlszeile geht vor).
 
 Umgebung:
   QS_TROCKENLAUF=1    Abmelden, Neu starten und Herunterfahren werden nur
@@ -333,6 +355,25 @@ mod tests {
         assert_eq!(p(&["--help"]), Ok(Befehl::Hilfe));
         assert_eq!(p(&["-h"]), Ok(Befehl::Hilfe));
         assert!(HILFE.contains("--sperren --sofort"));
+    }
+
+    #[test]
+    fn countdown_ausdruecklich_und_abschalten() {
+        assert!(countdown_ausdruecklich(&["--abmelden", "--countdown", "3"]));
+        assert!(countdown_ausdruecklich(&["--kein-countdown", "--neustart"]));
+        assert!(!countdown_ausdruecklich(&["--abmelden"]));
+        assert_eq!(
+            ohne_countdown(p(&["--abmelden"]).unwrap()),
+            Befehl::Rueckfrage {
+                aktion: Aktion::Abmelden,
+                countdown: None
+            }
+        );
+        assert_eq!(
+            ohne_countdown(p(&["--dialog", "--countdown", "9"]).unwrap()),
+            Befehl::Dialog { countdown: None }
+        );
+        assert_eq!(ohne_countdown(Befehl::Version), Befehl::Version);
     }
 
     #[test]

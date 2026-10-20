@@ -1,6 +1,8 @@
 //! Ausführen der Sitzungsaktionen.
 //!
-//! * Abmelden: genau das, was das Panel (QREL-04d, `session.rs`) tut:
+//! * Abmelden: zuerst Panel, Arbeitsfläche, Benachrichtigungen,
+//!   polkit-Agent, Leerlaufdienst und Applet-Helfer dieser Sitzung beenden
+//!   (`aufraeumen.rs`, QD-062), dann wie das Panel (QREL-04d, `session.rs`)
 //!   `<labwc> --exit` mit dem labwc der laufenden Sitzung aus
 //!   `/proc/$LABWC_PID/exe`; `querencia-session` räumt danach auf.
 //! * Neu starten, Herunterfahren: systemd-logind über D-Bus
@@ -54,10 +56,17 @@ pub fn labwc_der_sitzung() -> Option<PathBuf> {
     })
 }
 
-/// Abmelden: `<labwc> --exit` (erbt `LABWC_PID`).
+/// Abmelden: erst die Sitzungsprogramme beenden (`aufraeumen.rs`), dann
+/// `<labwc> --exit` (erbt `LABWC_PID`).
 pub fn abmelden() -> Result<(), String> {
     let labwc = labwc_der_sitzung()
         .ok_or_else(|| gettext("Cannot log out: no labwc of this session (LABWC_PID)"))?;
+    if let Some(pid) = std::env::var("LABWC_PID")
+        .ok()
+        .and_then(|p| p.parse::<u32>().ok())
+    {
+        crate::aufraeumen::sitzung_beenden(pid);
+    }
     if trockenlauf() {
         protokoll(&format!("TROCKENLAUF: {} --exit", labwc.display()));
         return Ok(());

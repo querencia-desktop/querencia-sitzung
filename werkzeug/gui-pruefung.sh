@@ -43,6 +43,26 @@ X
             echo "FAIL A01 Abmelden: $(cat "$OUT/status-szenario-abmelden.txt") / $(tr '\n' ';' <"$OUT/a01.log")" | tee -a "$OUT/ergebnis.txt"
         fi
     fi
+    if [ "$sz" = szenario-g2ai-abmelden.sh ]; then
+        auswerten_a02 | tee -a "$OUT/ergebnis.txt"
+    fi
+}
+
+# G2-AI (QD-062): Auswertung des echten Abmeldens mit Sitzungsprogrammen.
+auswerten_a02() {
+    local log=$OUT/a02.log sitz koed p alle=ja
+    sitz=$(sed -n 's/^sitzung //p' "$OUT/a02-pids.txt"); koed=$(sed -n 's/^koeder //p' "$OUT/a02-pids.txt")
+    local term; term=$(grep 'Abmelden: SIGTERM an' "$log")
+    for p in $sitz; do [[ $term == *"($p)"* ]] || alle=nein; done
+    for p in $koed; do [[ $term == *"($p)"* ]] && alle=nein; done
+    [ $alle = ja ] && echo "PASS A02a SIGTERM genau an die fünf Sitzungsprogramme ($sitz), nicht an die Köder ($koed)" || echo "FAIL A02a $term"
+    grep -q 'SIGKILL an querencia-netzwerk' "$log" && grep -q 'alle Sitzungsprogramme beendet' "$log" &&
+        echo "PASS A02b SIGTERM-tauber Platzhalter nach 2 s per SIGKILL beendet, alle beendet" || echo "FAIL A02b $(tr '\n' ';' <"$log")"
+    local nb nx; nb=$(grep -n 'alle Sitzungsprogramme beendet' "$log" | cut -d: -f1); nx=$(grep -n -- '--exit beendet mit exit status: 0' "$log" | cut -d: -f1)
+    grep -q 'Status: beendet' "$OUT/status-szenario-g2ai-abmelden.txt" && [ -n "$nb" ] && [ -n "$nx" ] && [ "$nb" -lt "$nx" ] &&
+        echo "PASS A02c erst Sitzungsprogramme beendet (Zeile $nb), dann labwc --exit (Zeile $nx); isolierter labwc endete" || echo "FAIL A02c nb=$nb nx=$nx $(cat "$OUT/status-szenario-g2ai-abmelden.txt")"
+    local zeile; zeile=$(grep -E '^t=[0-9]+ K[0-9]+ K[0-9]+ $' "$OUT/a02-beobachter.txt" | head -1)
+    [ -n "$zeile" ] && echo "PASS A02d Prozessliste nachher: nur noch die Köder ($zeile)" || echo "FAIL A02d $(tail -3 "$OUT/a02-beobachter.txt" | tr '\n' ';')"
 }
 
 if [ $# -ge 1 ]; then

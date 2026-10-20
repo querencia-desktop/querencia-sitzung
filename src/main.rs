@@ -6,8 +6,10 @@
 //! Leerlauf: `leerlauf.rs` (ext-idle-notify); Passwort: `pam.rs`.
 
 mod aktion;
+mod aufraeumen;
 mod cli;
 mod dialog;
+mod einstellung;
 mod i18n;
 mod leerlauf;
 mod pam;
@@ -20,7 +22,8 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
     i18n::init();
-    let befehl = match cli::parse(std::env::args().skip(1)) {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let befehl = match cli::parse(&args) {
         Ok(b) => b,
         Err(e) => {
             eprintln!("querencia-sitzung: {e}");
@@ -39,6 +42,7 @@ fn main() {
         Befehl::SperrenSofort => sperre::ausfuehren(),
         Befehl::Leerlauf { sekunden } => leerlauf::ausfuehren(sekunden),
         Befehl::Dialog { .. } | Befehl::Rueckfrage { .. } => {
+            let befehl = countdown_einstellen(befehl, &args);
             let aufbau = dialog::aufbau(&befehl).expect("Dialogbefehl");
             match dialog::rueckfrage(aufbau) {
                 None => {
@@ -58,4 +62,19 @@ fn main() {
     };
     let _ = Aktion::Abmelden; // alle Varianten werden in dialog/aktion verwendet
     std::process::exit(code);
+}
+
+/// `sitzung.ini` kann den Countdown abschalten, außer die Befehlszeile legt
+/// ihn fest (QD-062).
+fn countdown_einstellen(befehl: Befehl, args: &[String]) -> Befehl {
+    if cli::countdown_ausdruecklich(args) {
+        return befehl;
+    }
+    let (an, herkunft) = einstellung::countdown();
+    if an {
+        befehl
+    } else {
+        aktion::protokoll(&format!("Countdown aus ({herkunft})"));
+        cli::ohne_countdown(befehl)
+    }
 }
