@@ -8,6 +8,7 @@
 mod aktion;
 mod cli;
 mod dialog;
+mod i18n;
 mod leerlauf;
 mod pam;
 mod sperre;
@@ -18,6 +19,7 @@ use cli::{Aktion, Befehl};
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
+    i18n::init();
     let befehl = match cli::parse(std::env::args().skip(1)) {
         Ok(b) => b,
         Err(e) => {
@@ -47,7 +49,7 @@ fn main() {
                     Ok(()) => 0,
                     Err(e) => {
                         aktion::protokoll(&format!("{}: {e}", aktion.name()));
-                        dialog::fehler_anzeigen(aktion.name(), &e);
+                        dialog::fehler_anzeigen(&dialog::titel(aktion), &e);
                         1
                     }
                 },

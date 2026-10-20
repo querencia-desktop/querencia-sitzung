@@ -11,76 +11,113 @@ use gtk::prelude::*;
 use gtk::{gdk, glib};
 
 use crate::cli::{Aktion, Befehl};
+use crate::i18n::{gettext, ngettext_f};
 
 pub const APP_ID: &str = "org.querencia.Sitzung";
 
-/// Schaltflächenbeschriftung (mit Mnemonik) und Symbolnamen je Aktion.
-pub fn knopf_text(aktion: Aktion) -> (&'static str, &'static [&'static str]) {
+/// Schaltflächenbeschriftung (mit Mnemonik, übersetzt) und Symbolnamen je
+/// Aktion. Wortschatz gnome-session 2.30; die Zugriffstasten sind im Dialog
+/// „Sitzung beenden“ zusammen mit „_Abbrechen“ eindeutig.
+pub fn knopf_text(aktion: Aktion) -> (String, &'static [&'static str]) {
+    // TRANSLATORS: Schaltflächen der Sitzungsdialoge; im Dialog „End Session“
+    // stehen alle vier zusammen mit „_Cancel“, Zugriffstasten verschieden halten.
     match aktion {
-        Aktion::Abmelden => ("Ab_melden", &["system-log-out", "application-exit"]),
+        Aktion::Abmelden => (gettext("Log _Out"), &["system-log-out", "application-exit"]),
         Aktion::Sperren => (
-            "Bildschirm _sperren",
+            gettext("_Lock Screen"),
             &["system-lock-screen", "changes-prevent", "dialog-password"],
         ),
-        Aktion::Neustart => ("Neu s_tarten", &["system-reboot", "view-refresh"]),
-        Aktion::Herunterfahren => ("_Herunterfahren", &["system-shutdown", "application-exit"]),
+        Aktion::Neustart => (gettext("_Restart"), &["system-reboot", "view-refresh"]),
+        Aktion::Herunterfahren => (
+            gettext("_Shut Down"),
+            &["system-shutdown", "application-exit"],
+        ),
+    }
+}
+
+/// Fenstertitel einer Aktion (übersetzt), auch für Fehlermeldungen.
+pub fn titel(aktion: Aktion) -> String {
+    match aktion {
+        Aktion::Abmelden => gettext("Log Out"),
+        Aktion::Sperren => gettext("Lock Screen"),
+        Aktion::Neustart => gettext("Restart"),
+        Aktion::Herunterfahren => gettext("Shut Down"),
     }
 }
 
 /// Titel, Frage und Erläuterung der Rückfrage zu einer Aktion.
-pub fn texte(aktion: Aktion) -> (&'static str, &'static str, &'static str) {
+pub fn texte(aktion: Aktion) -> (String, String, String) {
+    let alle_beendet =
+        || gettext("All applications will be closed. Anything not saved there will be lost.");
     match aktion {
         Aktion::Abmelden => (
-            "Abmelden",
-            "Möchten Sie sich jetzt abmelden?",
-            "Alle Anwendungen dieser Sitzung werden beendet. \
-             Was dort nicht gespeichert ist, geht verloren.",
+            titel(aktion),
+            gettext("Log out of this system now?"),
+            gettext(
+                "All applications of this session will be closed. \
+                 Anything not saved there will be lost.",
+            ),
         ),
         Aktion::Sperren => (
-            "Bildschirm sperren",
-            "Möchten Sie den Bildschirm jetzt sperren?",
-            "Zum Entsperren wird Ihr Passwort benötigt. \
-             Die Anwendungen laufen weiter.",
+            titel(aktion),
+            gettext("Lock the screen now?"),
+            gettext(
+                "The password is needed to unlock the screen. \
+                 The applications keep running.",
+            ),
         ),
         Aktion::Neustart => (
-            "Neu starten",
-            "Möchten Sie den Rechner jetzt neu starten?",
-            "Alle Anwendungen werden beendet. \
-             Was dort nicht gespeichert ist, geht verloren.",
+            titel(aktion),
+            gettext("Restart this system now?"),
+            alle_beendet(),
         ),
         Aktion::Herunterfahren => (
-            "Herunterfahren",
-            "Möchten Sie den Rechner jetzt herunterfahren?",
-            "Alle Anwendungen werden beendet. \
-             Was dort nicht gespeichert ist, geht verloren.",
+            titel(aktion),
+            gettext("Shut down this system now?"),
+            alle_beendet(),
         ),
     }
 }
 
-/// Countdown-Zeile wie in GNOME 2 („Sie werden in 60 Sekunden automatisch
-/// abgemeldet.“).
+/// Countdown-Zeile wie in GNOME 2 („You will be automatically logged out in
+/// 60 seconds.“).
 pub fn countdown_text(aktion: Aktion, sekunden: u32) -> String {
-    let zeit = if sekunden == 1 {
-        "1 Sekunde".to_string()
-    } else {
-        format!("{sekunden} Sekunden")
-    };
+    let n = sekunden as usize;
+    // TRANSLATORS: Countdown-Zeile der Rückfragen (gnome-session 2.30).
     match aktion {
-        Aktion::Abmelden => format!("Sie werden in {zeit} automatisch abgemeldet."),
-        Aktion::Sperren => format!("Der Bildschirm wird in {zeit} automatisch gesperrt."),
-        Aktion::Neustart => format!("Der Rechner wird in {zeit} automatisch neu gestartet."),
-        Aktion::Herunterfahren => {
-            format!("Der Rechner wird in {zeit} automatisch heruntergefahren.")
-        }
+        Aktion::Abmelden => ngettext_f(
+            "You will be automatically logged out in {n} second.",
+            "You will be automatically logged out in {n} seconds.",
+            n,
+            &[],
+        ),
+        Aktion::Sperren => ngettext_f(
+            "The screen will be locked automatically in {n} second.",
+            "The screen will be locked automatically in {n} seconds.",
+            n,
+            &[],
+        ),
+        Aktion::Neustart => ngettext_f(
+            "This system will be automatically restarted in {n} second.",
+            "This system will be automatically restarted in {n} seconds.",
+            n,
+            &[],
+        ),
+        Aktion::Herunterfahren => ngettext_f(
+            "This system will be automatically shut down in {n} second.",
+            "This system will be automatically shut down in {n} seconds.",
+            n,
+            &[],
+        ),
     }
 }
 
 /// Aufbau eines Dialogs: Titel, Texte, angebotene Aktionen, Countdown-Ziel.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Aufbau {
-    pub titel: &'static str,
-    pub frage: &'static str,
-    pub detail: &'static str,
+    pub titel: String,
+    pub frage: String,
+    pub detail: String,
     pub symbol: &'static [&'static str],
     /// Schaltflächen von links nach rechts; `None` = Abbrechen.
     pub knoepfe: Vec<Option<Aktion>>,
@@ -92,11 +129,13 @@ pub struct Aufbau {
 pub fn aufbau(befehl: &Befehl) -> Option<Aufbau> {
     match befehl {
         Befehl::Dialog { countdown } => Some(Aufbau {
-            titel: "Sitzung beenden",
-            frage: "Diese Sitzung jetzt beenden?",
-            detail: "Abmelden beendet alle Anwendungen dieser Sitzung; \
-                     Neu starten und Herunterfahren beenden den Rechner. \
-                     Was nicht gespeichert ist, geht verloren.",
+            titel: gettext("End Session"),
+            frage: gettext("End this session now?"),
+            detail: gettext(
+                "Log Out closes all applications of this session; \
+                 Restart and Shut Down stop the computer. \
+                 Anything not saved will be lost.",
+            ),
             symbol: &["system-log-out", "application-exit"],
             knoepfe: vec![
                 Some(Aktion::Sperren),
@@ -156,7 +195,7 @@ fn css_laden() {
 fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>>>) -> gtk::Window {
     let window = gtk::Window::builder()
         .application(app)
-        .title(aufbau.titel)
+        .title(aufbau.titel.as_str())
         .resizable(false)
         .build();
     window.add_css_class("qs-dialog");
@@ -167,7 +206,7 @@ fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>
     let frage = gtk::Label::builder()
         .label(format!(
             "<b><big>{}</big></b>",
-            glib::markup_escape_text(aufbau.frage)
+            glib::markup_escape_text(&aufbau.frage)
         ))
         .use_markup(true)
         .xalign(0.0)
@@ -175,7 +214,7 @@ fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>
         .max_width_chars(48)
         .build();
     let detail = gtk::Label::builder()
-        .label(aufbau.detail)
+        .label(aufbau.detail.as_str())
         .xalign(0.0)
         .wrap(true)
         .max_width_chars(48)
@@ -197,7 +236,7 @@ fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>
         let button = match eintrag {
             Some(aktion) => {
                 let (beschriftung, symbole) = knopf_text(*aktion);
-                let b = knopf(beschriftung, symbole);
+                let b = knopf(&beschriftung, symbole);
                 let aktion = *aktion;
                 b.connect_clicked(glib::clone!(
                     #[weak]
@@ -212,7 +251,7 @@ fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>
                 b
             }
             None => {
-                let b = knopf("_Abbrechen", &["process-stop", "dialog-cancel"]);
+                let b = knopf(&gettext("_Cancel"), &["process-stop", "dialog-cancel"]);
                 b.connect_clicked(glib::clone!(
                     #[weak]
                     window,
@@ -342,7 +381,7 @@ pub fn fehler_anzeigen(titel: &str, text: &str) {
         let oben = gtk::Box::new(gtk::Orientation::Horizontal, 12);
         oben.append(&symbol);
         oben.append(&label);
-        let ok = knopf("_Schließen", &["window-close"]);
+        let ok = knopf(&gettext("_Close"), &["window-close"]);
         ok.connect_clicked(glib::clone!(
             #[weak]
             window,
@@ -415,7 +454,7 @@ mod tests {
             .unwrap();
             assert_eq!(a.knoepfe, vec![None, Some(aktion)]);
             assert_eq!(a.countdown, Some((aktion, 60)));
-            assert_eq!(a.titel, aktion.name());
+            assert_eq!(a.titel, titel(aktion));
             assert!(a.frage.ends_with('?'));
         }
         assert_eq!(aufbau(&Befehl::SperrenSofort), None);
@@ -424,16 +463,17 @@ mod tests {
 
     #[test]
     fn countdown_texte() {
+        // Ohne Katalog englisch (msgid), deutsch siehe po/de.po.
         assert_eq!(
             countdown_text(Aktion::Abmelden, 60),
-            "Sie werden in 60 Sekunden automatisch abgemeldet."
+            "You will be automatically logged out in 60 seconds."
         );
         assert_eq!(
             countdown_text(Aktion::Neustart, 1),
-            "Der Rechner wird in 1 Sekunde automatisch neu gestartet."
+            "This system will be automatically restarted in 1 second."
         );
-        assert!(countdown_text(Aktion::Herunterfahren, 5).contains("heruntergefahren"));
-        assert!(countdown_text(Aktion::Sperren, 5).contains("gesperrt"));
+        assert!(countdown_text(Aktion::Herunterfahren, 5).contains("shut down"));
+        assert!(countdown_text(Aktion::Sperren, 5).contains("locked"));
     }
 
     #[test]

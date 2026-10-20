@@ -4,3 +4,8 @@
 /werkzeug/bin/qeingabe
 /werkzeug/bin/qausgabe
 /nachweis/live
+__pycache__/
+# Vorlage der Integration 0.1.2: Binaries und Katalog nicht ins Repo
+/integration/vorschlag-012/querencia-sitzung
+/integration/vorschlag-012/querencia-polkit-agent
+/integration/vorschlag-012/share/

@@ -19,4 +19,7 @@ isoliert_pruefen() {
         { nok "Sicherheitsnetz: LABWC_PID $LABWC_PID ist nicht der isolierte labwc"; touch "$QS_PROFILE/logs/FERTIG"; exit 1; }
     [ "${QS_TROCKENLAUF:-}" = 1 ] || { nok "Sicherheitsnetz: QS_TROCKENLAUF fehlt"; touch "$QS_PROFILE/logs/FERTIG"; exit 1; }
 }
+# QS_OHNE_SYSTEM=1 (gui-pruefung.sh setzt es als Vorgabe): Fälle auslassen,
+# die das echte System fragen – logind auf dem Systembus, echtes PAM.
+ohne_system() { [ "${QS_OHNE_SYSTEM:-1}" = 1 ]; }
 isoliert_pruefen

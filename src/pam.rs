@@ -9,7 +9,7 @@
 //! des Sperrbildschirms.
 //!
 //! Dienstname: `QS_PAM_DIENST`, sonst `querencia-sitzung`, falls
-//! `/etc/pam.d/querencia-sitzung` existiert (Vorschlag in `integration/`),
+//! `/etc/pam.d/querencia-sitzung` existiert (legt der Administrator an),
 //! sonst `login` (vorhanden, enthält `common-auth`; mit `pam_faildelay`
 //! von drei Sekunden nach einem Fehlversuch).
 

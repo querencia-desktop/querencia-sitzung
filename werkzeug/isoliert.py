@@ -52,7 +52,7 @@ RC_XML = """<?xml version="1.0"?>
 <labwc_config>
   <core><decoration>server</decoration></core>
   <theme><name>Querencia-Klassisch</name></theme>
-  <!-- Vorschlag aus integration/rc.xml-sitzung.patch: Dialog mittig -->
+  <!-- wie die Fensterregel der Querencia-Sitzung (rc.xml): Dialog mittig -->
   <windowRules>
     <windowRule identifier="org.querencia.Sitzung*" skipTaskbar="yes" skipWindowSwitcher="yes">
       <action name="AutoPlace" policy="center" />
@@ -130,7 +130,7 @@ def main() -> int:
         "GDK_DEBUG": "no-portals",
         "GTK_USE_PORTAL": "0",
         "LANG": "en_US.UTF-8",
-        "LANGUAGE": "de",
+        "LANGUAGE": os.environ.get("LANGUAGE") or "de",
         "QS_PROFILE": profile,
         # Sicherheitsnetz: in der isolierten Prüfung nie Neustart,
         # Herunterfahren oder labwc --exit ausführen.

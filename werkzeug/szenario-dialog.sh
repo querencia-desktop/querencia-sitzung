@@ -18,15 +18,19 @@ start d03 --dialog; q "key Return" "wait 800"; ende
 # D04 Pfeil rechts + Enter = Abmelden (Trockenlauf)
 start d04 --dialog; q "key Right" "wait 400"; shot d04-fokus-abmelden; q "key Return" "wait 800"; ende
 [ $RC = 0 ] && grep -q 'TROCKENLAUF: .*labwc --exit' "$OUT/d04.log" && ok "D04 Pfeil rechts, Enter: Abmelden im Trockenlauf (labwc --exit nur protokolliert)" || nok "D04 Abmelden (Exit $RC)"
-# D05 Pfeil links + Enter = Herunterfahren
-start d05 --dialog; q "key Left" "wait 300" "key Return" "wait 1500"; ende
-[ $RC = 0 ] && grep -q 'logind CanPowerOff: ' "$OUT/d05.log" && grep -q 'TROCKENLAUF: logind PowerOff' "$OUT/d05.log" && ok "D05 Pfeil links, Enter: Herunterfahren im Trockenlauf ($(grep -o 'CanPowerOff: [a-z]*' "$OUT/d05.log"))" || nok "D05 Herunterfahren (Exit $RC)"
-# D06 Links, Links, Enter = Neu starten
-start d06 --dialog; q "key Left" "key Left" "wait 300" "key Return" "wait 1500"; ende
-[ $RC = 0 ] && grep -q 'TROCKENLAUF: logind Reboot' "$OUT/d06.log" && ok "D06 Pfeil links ×2, Enter: Neu starten im Trockenlauf ($(grep -o 'CanReboot: [a-z]*' "$OUT/d06.log"))" || nok "D06 Neu starten (Exit $RC)"
-# D07 Maus: Neu starten anklicken
-start d07 --dialog; q "move 524 421" "wait 300" "click" "wait 1500"; ende
-[ $RC = 0 ] && grep -q 'TROCKENLAUF: logind Reboot' "$OUT/d07.log" && ok "D07 Maus: Klick auf „Neu starten“ im Trockenlauf" || nok "D07 Maus Neu starten (Exit $RC)"
+if ohne_system; then
+    blocked "D05–D07 Neu starten/Herunterfahren im Trockenlauf fragen logind (CanReboot/CanPowerOff) auf dem echten Systembus – ausgelassen (Auflage G2-AH)"
+else
+    # D05 Pfeil links + Enter = Herunterfahren
+    start d05 --dialog; q "key Left" "wait 300" "key Return" "wait 1500"; ende
+    [ $RC = 0 ] && grep -q 'logind CanPowerOff: ' "$OUT/d05.log" && grep -q 'TROCKENLAUF: logind PowerOff' "$OUT/d05.log" && ok "D05 Pfeil links, Enter: Herunterfahren im Trockenlauf ($(grep -o 'CanPowerOff: [a-z]*' "$OUT/d05.log"))" || nok "D05 Herunterfahren (Exit $RC)"
+    # D06 Links, Links, Enter = Neu starten
+    start d06 --dialog; q "key Left" "key Left" "wait 300" "key Return" "wait 1500"; ende
+    [ $RC = 0 ] && grep -q 'TROCKENLAUF: logind Reboot' "$OUT/d06.log" && ok "D06 Pfeil links ×2, Enter: Neu starten im Trockenlauf ($(grep -o 'CanReboot: [a-z]*' "$OUT/d06.log"))" || nok "D06 Neu starten (Exit $RC)"
+    # D07 Maus: Neu starten anklicken
+    start d07 --dialog; q "move 524 421" "wait 300" "click" "wait 1500"; ende
+    [ $RC = 0 ] && grep -q 'TROCKENLAUF: logind Reboot' "$OUT/d07.log" && ok "D07 Maus: Klick auf „Neu starten“ im Trockenlauf" || nok "D07 Maus Neu starten (Exit $RC)"
+fi
 # D08 Mnemonik Alt+M = Abmelden
 start d08 --dialog; q "chord alt m" "wait 800"; ende
 [ $RC = 0 ] && grep -q 'TROCKENLAUF: .*labwc --exit' "$OUT/d08.log" && ok "D08 Alt+M: Abmelden im Trockenlauf" || nok "D08 Alt+M (Exit $RC)"
@@ -42,9 +46,13 @@ START_WARTEN=1.5 start d10 --abmelden --countdown 3; shot d10-abmelden-countdown
 # D11 --neustart: Rückfrage, Esc
 start d11 --neustart; shot d11-neustart-rueckfrage; q "key Escape" "wait 800"; ende
 [ $RC = 0 ] && grep -q abgebrochen "$OUT/d11.log" && ok "D11 --neustart Rückfrage, Esc bricht ab" || nok "D11 (Exit $RC)"
-# D12 --herunterfahren --kein-countdown: Rechts, Enter
-start d12 --herunterfahren --kein-countdown; shot d12-herunterfahren-rueckfrage; q "key Right" "wait 300" "key Return" "wait 1500"; ende
-[ $RC = 0 ] && grep -q 'TROCKENLAUF: logind PowerOff' "$OUT/d12.log" && ok "D12 --herunterfahren --kein-countdown: Rechts, Enter im Trockenlauf" || nok "D12 (Exit $RC)"
+if ohne_system; then
+    blocked "D12 --herunterfahren bestätigt fragt logind auf dem echten Systembus – ausgelassen (Auflage G2-AH)"
+else
+    # D12 --herunterfahren --kein-countdown: Rechts, Enter
+    start d12 --herunterfahren --kein-countdown; shot d12-herunterfahren-rueckfrage; q "key Right" "wait 300" "key Return" "wait 1500"; ende
+    [ $RC = 0 ] && grep -q 'TROCKENLAUF: logind PowerOff' "$OUT/d12.log" && ok "D12 --herunterfahren --kein-countdown: Rechts, Enter im Trockenlauf" || nok "D12 (Exit $RC)"
+fi
 # D13 --sperren Rückfrage → Sperre → Entsperren
 start d13 --sperren; shot d13-sperren-rueckfrage; q "key Right" "wait 300" "key Return" "wait 2500"; shot d13-gesperrt
 grep -q 'Sitzung gesperrt' "$OUT/d13.log" && ok "D13 --sperren: Rückfrage, dann Sperre" || nok "D13 Sperre"
@@ -55,7 +63,7 @@ q "type querencia-test" "key Return" "wait 1500"; ende
 "$BIN" --dialog --sofort >>"$OUT/d14.log" 2>&1; rc2=$?
 "$BIN" >>"$OUT/d14.log" 2>&1; rc3=$?
 [ $rc1 = 2 ] && [ $rc2 = 2 ] && [ $rc3 = 2 ] && ok "D14 falsche Argumente: Exit 2 mit Meldung" || nok "D14 Argumente ($rc1 $rc2 $rc3)"
-"$BIN" --version >"$OUT/d14-version.txt" 2>&1 && grep -q '^querencia-sitzung 0.1.1' "$OUT/d14-version.txt" && ok "D14b --version: $(cat "$OUT/d14-version.txt")" || nok "D14b --version"
+"$BIN" --version >"$OUT/d14-version.txt" 2>&1 && grep -q '^querencia-sitzung 0\.1\.[0-9]' "$OUT/d14-version.txt" && ok "D14b --version: $(cat "$OUT/d14-version.txt")" || nok "D14b --version"
 # D15 zweiter Aufruf holt den offenen Dialog nach vorn (eine Instanz)
 start d15 --dialog; "$BIN" --dialog >"$OUT/d15b.log" 2>&1; rc=$?
 kill -0 $P 2>/dev/null && [ $rc = 0 ] && ok "D15 zweiter --dialog-Aufruf endet sofort (Exit 0), erster Dialog bleibt" || nok "D15 zweite Instanz (Exit $rc)"

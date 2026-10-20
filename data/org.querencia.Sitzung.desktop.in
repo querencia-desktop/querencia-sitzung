@@ -1,0 +1,23 @@
+[Desktop Entry]
+# Querencia Sitzung: Desktop-ID = GApplication-ID org.querencia.Sitzung,
+# damit labwc und die Fensterliste Titelleistensymbol und Namen finden.
+# Exec/TryExec ohne Pfad: installiert liegt das Programm im PATH. Liegt es
+# außerhalb des PATH, Exec/TryExec beim Installieren absolut setzen, denn
+# GIO verwirft Einträge, deren TryExec nicht im PATH liegt.
+# NoDisplay: der Dialog wird über das Panel-Systemmenü und Tastenkürzel
+# geöffnet, nicht aus dem Anwendungsmenü.
+# Vorlage: Name, GenericName und Comment sind englisch; die Übersetzungen
+# (Name[de]= …) setzt `werkzeug/i18n.py desktop` aus po/*.po ein (entspricht
+# msgfmt --desktop). Erzeugt: org.querencia.Sitzung.desktop.
+Type=Application
+Version=1.5
+Name=Querencia Sitzung
+GenericName=Session
+Comment=Log out, lock the screen, restart or shut down
+Exec=querencia-sitzung --dialog
+TryExec=querencia-sitzung
+Icon=org.querencia.Sitzung
+Terminal=false
+NoDisplay=true
+Categories=GTK;System;
+StartupNotify=false

@@ -16,6 +16,12 @@
 //! Aufruf: `querencia-polkit-agent` (läuft bis zum Sitzungsende; für den
 //! Autostart), `--version`, `--hilfe`.
 
+// Übersetzungen: dasselbe Modul und dieselbe Domäne wie querencia-sitzung
+// (beide Programme liegen in derselben Ablage).
+#[allow(dead_code)]
+#[path = "../i18n.rs"]
+mod i18n;
+
 use std::cell::RefCell;
 use std::ffi::{CString, c_char, c_int, c_void};
 use std::rc::Rc;
@@ -238,7 +244,7 @@ fn fenster(
 ) {
     let window = gtk::Window::builder()
         .application(app)
-        .title("Legitimierung erforderlich")
+        .title(i18n::gettext("Authenticate"))
         .resizable(false)
         .build();
     window.add_css_class("qs-dialog");
@@ -253,10 +259,11 @@ fn fenster(
     let frage = gtk::Label::builder()
         .label(format!(
             "<b><big>{}</big></b>",
-            glib::markup_escape_text(if nachricht.is_empty() {
-                "Eine Anwendung braucht eine Legitimierung."
+            glib::markup_escape_text(&if nachricht.is_empty() {
+                // TRANSLATORS: nur wenn polkitd keine eigene Meldung schickt.
+                i18n::gettext("An application requires authentication.")
             } else {
-                nachricht
+                nachricht.to_string()
             })
         ))
         .use_markup(true)
@@ -265,14 +272,17 @@ fn fenster(
         .max_width_chars(48)
         .build();
     let detail = gtk::Label::builder()
-        .label(format!("Aktion: {aktion}"))
+        .label(i18n::gettext_f("Action: {action}", &[("action", aktion)]))
         .xalign(0.0)
         .wrap(true)
         .max_width_chars(48)
         .build();
     detail.add_css_class("dim-label");
     let hinweis = gtk::Label::builder()
-        .label(format!("Passwort für {benutzer}:"))
+        .label(i18n::gettext_f(
+            "Password for {user}:",
+            &[("user", benutzer)],
+        ))
         .xalign(0.0)
         .build();
     let eingabe = gtk::PasswordEntry::builder()
@@ -281,7 +291,7 @@ fn fenster(
         .sensitive(false)
         .build();
     let status = gtk::Label::builder().xalign(0.0).wrap(true).build();
-    status.set_label("Verbindung zum Legitimierungsdienst …");
+    status.set_label(&i18n::gettext("Connecting to the authentication service…"));
     status.add_css_class("dim-label");
     let text = gtk::Box::new(gtk::Orientation::Vertical, 8);
     text.append(&frage);
@@ -292,8 +302,14 @@ fn fenster(
     let oben = gtk::Box::new(gtk::Orientation::Horizontal, 12);
     oben.append(&bild);
     oben.append(&text);
-    let abbrechen = knopf("_Abbrechen", &["process-stop", "dialog-cancel"]);
-    let legitimieren = knopf("_Legitimieren", &["dialog-password", "emblem-ok"]);
+    let abbrechen = knopf(
+        &i18n::gettext("_Cancel"),
+        &["process-stop", "dialog-cancel"],
+    );
+    let legitimieren = knopf(
+        &i18n::gettext("_Authenticate"),
+        &["dialog-password", "emblem-ok"],
+    );
     legitimieren.add_css_class("suggested-action");
     legitimieren.set_sensitive(false);
     let knoepfe = gtk::Box::new(gtk::Orientation::Horizontal, 6);
@@ -408,7 +424,7 @@ fn sitzung_starten(polkit: &Rc<Polkit>, anfrage: &Rc<RefCell<Anfrage>>) {
             eingabe.set_sensitive(true);
             legitimieren.set_sensitive(true);
             eingabe.grab_focus();
-            status.set_label("Passwort eingeben und Enter drücken");
+            status.set_label(&i18n::gettext("Enter the password and press Enter"));
             None
         }
     });
@@ -485,8 +501,12 @@ fn sitzung_starten(polkit: &Rc<Polkit>, anfrage: &Rc<RefCell<Anfrage>>) {
                 let a = anfrage.borrow();
                 (a.status.clone(), a.eingabe.clone())
             };
-            status.set_label(&format!(
-                "Falsches Passwort, bitte erneut versuchen ({versuche} von {MAX_VERSUCHE})"
+            status.set_label(&i18n::gettext_f(
+                "Wrong password, please try again ({attempt} of {max})",
+                &[
+                    ("attempt", &versuche.to_string()),
+                    ("max", &MAX_VERSUCHE.to_string()),
+                ],
             ));
             eingabe.set_text("");
             // Neue Sitzung im nächsten Leerlauf, nicht aus dem Signal heraus.
@@ -526,7 +546,7 @@ fn antworten(polkit: &Polkit, anfrage: &Rc<RefCell<Anfrage>>) {
         a.wartet_auf_antwort = false;
         a.eingabe.set_sensitive(false);
         a.knopf.set_sensitive(false);
-        a.status.set_label("Passwort wird geprüft …");
+        a.status.set_label(&i18n::gettext("Checking the password…"));
         a.eingabe.set_text("");
     }
     polkit.response(&session, &text);
@@ -850,6 +870,7 @@ fn css_laden() {
 }
 
 fn main() {
+    i18n::init();
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("--version") | Some("-V") => {

@@ -32,13 +32,18 @@ q "type querencia-test" "key Return" "wait 1500"; ende; [ $RC = 0 ] || nok "S06b
 start s07 --sperren --sofort; grim -o HEADLESS-1 "$OUT/s07-sperre-1920x1080.png"
 grep -q 'HEADLESS-1: 1920×1080' "$OUT/s07.log" && ok "S07 Sperre 1920×1080 auf Ausgang 1" || nok "S07 1920×1080: $(grep Sperrfläche "$OUT/s07.log" | tr '\n' ';')"
 q "type querencia-test" "key Return" "wait 1500"; ende; [ $RC = 0 ] || nok "S07b Entsperren (Exit $RC)"
-# S08 echtes PAM (Dienst login): falsches Passwort wird abgelehnt
-unset QS_TESTPASSWORT
-start s08 --sperren --sofort
-grep -q 'PAM-Dienst login' "$OUT/s08.log" && ! grep -q Testpasswort "$OUT/s08.log" || nok "S08 PAM-Dienst nicht wie erwartet"
-q "type falsch" "key Return" "wait 500"; shot s08-pam-prueft; sleep 5; shot s08-pam-falsch
-grep -q 'Passwort abgelehnt: Falsches Passwort' "$OUT/s08.log" && kill -0 $P 2>/dev/null && ok "S08 echtes PAM (Dienst login): falsches Passwort abgelehnt, Sperre bleibt" || nok "S08 PAM: $(tail -2 "$OUT/s08.log" | tr '\n' ';')"
-blocked "S08b Entsperren mit dem echten Passwort: kein Testkonto und kein sudo auf der VM; geprüft wurde stattdessen die Ablehnung über PAM (S08) und das Entsperren im Testpasswort-Pfad (S04, D09, D13)"
+if ohne_system; then
+    blocked "S08 echtes PAM (Dienst login) mit falschem Passwort – ausgelassen (Auflage G2-AH: kein echtes PAM); S09 braucht nur eine laufende Sperre"
+    start s08 --sperren --sofort
+else
+    # S08 echtes PAM (Dienst login): falsches Passwort wird abgelehnt
+    unset QS_TESTPASSWORT
+    start s08 --sperren --sofort
+    grep -q 'PAM-Dienst login' "$OUT/s08.log" && ! grep -q Testpasswort "$OUT/s08.log" || nok "S08 PAM-Dienst nicht wie erwartet"
+    q "type falsch" "key Return" "wait 500"; shot s08-pam-prueft; sleep 5; shot s08-pam-falsch
+    grep -q 'Passwort abgelehnt: Falsches Passwort' "$OUT/s08.log" && kill -0 $P 2>/dev/null && ok "S08 echtes PAM (Dienst login): falsches Passwort abgelehnt, Sperre bleibt" || nok "S08 PAM: $(tail -2 "$OUT/s08.log" | tr '\n' ';')"
+    blocked "S08b Entsperren mit dem echten Passwort: kein Testkonto und kein sudo auf der VM; geprüft wurde stattdessen die Ablehnung über PAM (S08) und das Entsperren im Testpasswort-Pfad (S04, D09, D13)"
+fi
 # S09 Absturz des Sperrprogramms simulieren, neue Sperre übernimmt und entsperrt
 kill -KILL $P; sleep 1
 export QS_TESTPASSWORT=querencia-test

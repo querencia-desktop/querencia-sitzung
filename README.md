@@ -2,7 +2,8 @@
 
 Sitzungsfunktionen eines klassischen Desktops für Querencia Desktop
 (labwc 0.9.8, GTK 4, ohne libadwaita): Abmelden, Bildschirm sperren,
-Neu starten, Herunterfahren und Leerlaufsperre. Auftrag G2-K.
+Neu starten, Herunterfahren und Leerlaufsperre, dazu der polkit-Agent
+`querencia-polkit-agent`. Version 0.1.2.
 
 ```text
 querencia-sitzung --dialog [--countdown SEK | --kein-countdown]
@@ -26,25 +27,40 @@ protokolliert. Zusammen mit `QS_TESTPASSWORT` und einem `XDG_RUNTIME_DIR`
 außerhalb `/run/user/` entsperrt der Sperrbildschirm ohne PAM (nur in der
 isolierten Prüfung möglich).
 
-## Bauen und prüfen
+Bauen: [docs/building.md](docs/building.md). Prüfen (Unit-Tests, isolierte
+GUI mit eigenem labwc, eigenem D-Bus und eigenem Profil):
+[docs/testing.md](docs/testing.md).
 
-```bash
-cargo build --release          # target/release/querencia-sitzung
-cargo test                     # Unit-Tests (ohne Wayland)
-bash werkzeug/gui-pruefung.sh  # isolierte GUI-Prüfung (eigener headless labwc)
-```
-
-Die GUI-Prüfung berührt die laufende Sitzung nicht (eigenes
-`XDG_RUNTIME_DIR`, eigener D-Bus, eigenes Profil unter `gui-test/`);
-Ergebnisse und Bilder liegen unter `nachweis/gui/`. `QS_BIN=…` wählt das
-geprüfte Programm (Standard `target/debug`).
-
-## Integration
-
-Vorbereitet, nicht angewendet, unter `integration/`:
-`sitzung-integrieren.sh pruefen|aktivieren|zurueck` (Programm-Link,
-Menüeintrag, Symbole), Patches für `rc.xml` (Strg+Alt+L, Strg+Alt+Entf,
-Fensterregel „mittig“), für `querencia-session`/`autostart`
-(Leerlaufsperre) und für das Panel-Systemmenü sowie ein PAM-Dienstvorschlag.
+Gestartet werden der Leerlaufdienst (`--leerlauf`) und der polkit-Agent vom
+Autostart der Querencia-Sitzung (`querencia-runtime`), die Dialoge über
+labwc-Tastenkürzel (Strg+Alt+L, Strg+Alt+Entf) und das Systemmenü des Panels.
 
 Symbolregel: kein `hicolor/48x48` neben Scalable-Symbolen (GTK-4.22-Absturz).
+
+## Sprachen
+
+Seit 0.1.2 sind die Oberflächentexte englisch im Code (msgid) und deutsch in
+`po/de.po` (GNU gettext, Muster Querencia Editor 0.2.0); der deutsche
+Wortlaut ist der bisherige. Englischer Wortschatz nach gnome-session 2.30
+(„Log Out“, „Lock Screen“, „Restart“, „Shut Down“, Countdown „You will be
+automatically logged out in 60 seconds.“) und polkit-gnome („Authenticate“,
+„Password for …:“). Übersetzt sind Dialoge, Rückfragen, Countdown,
+Fehlermeldungen der Aktionen und der polkit-Agent. **Noch deutsch** sind der
+Sperrbildschirm (`sperre.rs`, Datum aus `zeit.rs`) und die PAM-Meldungen
+(`pam.rs`): Änderungen dort nur nach Rückfrage. Beide Programme teilen den
+Katalog `querencia-sitzung.mo`. Die Sprache folgt `LANGUAGE`/`LANG`; ohne
+deutschen Katalog erscheint Englisch. Befehlszeile, `--hilfe`, Protokoll und
+die D-Bus-Fehlerantworten des Agenten an polkitd bleiben deutsch.
+
+## Lizenz
+
+GNU GPL, Version 3 oder neuer, siehe [LICENSE](LICENSE). Copyright 2026
+Querencia Desktop contributors. Eigener Code; aus gnome-session,
+gnome-screensaver und polkit-gnome wurde kein Code übernommen. Änderungen:
+[CHANGELOG.md](CHANGELOG.md).
+
+Eigene Vermerke: die mit `wayland-scanner` erzeugten Protokolldateien unter
+`werkzeug/protokolle/` (virtual-keyboard: Copyright Kristian Høgsberg u. a.;
+wlr-Protokolle: jeweilige Autoren; MIT-artige Lizenzen im Dateikopf); nur
+für das Prüfwerkzeug.
+

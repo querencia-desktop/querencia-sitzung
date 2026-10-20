@@ -20,6 +20,8 @@ use gtk::glib;
 use gtk::prelude::*;
 
 use crate::cli::Aktion;
+use crate::dialog::titel;
+use crate::i18n::{gettext, gettext_f};
 
 /// `QS_TROCKENLAUF=1`: nur protokollieren.
 pub fn trockenlauf() -> bool {
@@ -54,9 +56,8 @@ pub fn labwc_der_sitzung() -> Option<PathBuf> {
 
 /// Abmelden: `<labwc> --exit` (erbt `LABWC_PID`).
 pub fn abmelden() -> Result<(), String> {
-    let labwc = labwc_der_sitzung().ok_or_else(|| {
-        "Abmelden nicht möglich: kein labwc dieser Sitzung (LABWC_PID)".to_string()
-    })?;
+    let labwc = labwc_der_sitzung()
+        .ok_or_else(|| gettext("Cannot log out: no labwc of this session (LABWC_PID)"))?;
     if trockenlauf() {
         protokoll(&format!("TROCKENLAUF: {} --exit", labwc.display()));
         return Ok(());
@@ -65,28 +66,49 @@ pub fn abmelden() -> Result<(), String> {
         .arg("--exit")
         .stdin(Stdio::null())
         .status()
-        .map_err(|e| format!("{} --exit fehlgeschlagen: {e}", labwc.display()))?;
+        .map_err(|e| {
+            gettext_f(
+                "{program} --exit failed: {error}",
+                &[
+                    ("program", &labwc.display().to_string()),
+                    ("error", &e.to_string()),
+                ],
+            )
+        })?;
     protokoll(&format!("{} --exit beendet mit {status}", labwc.display()));
     if status.success() {
         Ok(())
     } else {
-        Err(format!("{} --exit meldet {status}", labwc.display()))
+        Err(gettext_f(
+            "{program} --exit reported {status}",
+            &[
+                ("program", &labwc.display().to_string()),
+                ("status", &status.to_string()),
+            ],
+        ))
     }
 }
 
 /// Deutet die Antwort von `CanReboot`/`CanPowerOff`: `yes` und `challenge`
-/// (polkit fragt nach) erlauben den Aufruf, `no` und `na` nicht.
+/// (polkit fragt nach) erlauben den Aufruf, `no` und `na` nicht. `was` ist
+/// der übersetzte Name der Aktion („Restart“).
 pub fn erlaubnis(antwort: &str, was: &str) -> Result<(), String> {
     match antwort {
         "yes" | "challenge" => Ok(()),
-        "no" => Err(format!(
-            "{was} ist für diesen Benutzer nicht erlaubt (logind: no). \
-             Bitte an der Konsole oder als Administrator ausführen."
+        // TRANSLATORS: {action} ist „Restart“ oder „Shut Down“.
+        "no" => Err(gettext_f(
+            "{action} is not allowed for this user (logind: no). \
+             Please run it at the console or as an administrator.",
+            &[("action", was)],
         )),
-        "na" => Err(format!(
-            "{was} ist auf diesem System nicht möglich (logind: na)."
+        "na" => Err(gettext_f(
+            "{action} is not possible on this system (logind: na).",
+            &[("action", was)],
         )),
-        andere => Err(format!("{was}: unerwartete Antwort von logind: „{andere}“")),
+        andere => Err(gettext_f(
+            "{action}: unexpected answer from logind: “{answer}”",
+            &[("action", was), ("answer", andere)],
+        )),
     }
 }
 
@@ -96,8 +118,12 @@ fn logind(
     parameter: Option<&glib::Variant>,
     timeout_ms: i32,
 ) -> Result<glib::Variant, String> {
-    let bus = gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>)
-        .map_err(|e| format!("System-D-Bus nicht erreichbar: {e}"))?;
+    let bus = gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>).map_err(|e| {
+        gettext_f(
+            "System D-Bus not reachable: {error}",
+            &[("error", &e.to_string())],
+        )
+    })?;
     bus.call_sync(
         Some("org.freedesktop.login1"),
         "/org/freedesktop/login1",
@@ -150,9 +176,12 @@ pub fn sperren_ausfuehren(programm: &Path) -> String {
     let err = Command::new(programm)
         .args(["--sperren", "--sofort"])
         .exec();
-    format!(
-        "Sperrbildschirm nicht startbar ({}): {err}",
-        programm.display()
+    gettext_f(
+        "Cannot start the lock screen ({program}): {error}",
+        &[
+            ("program", &programm.display().to_string()),
+            ("error", &err.to_string()),
+        ],
     )
 }
 
@@ -161,8 +190,8 @@ pub fn ausfuehren(aktion: Aktion) -> Result<(), String> {
     protokoll(&format!("Aktion: {}", aktion.name()));
     match aktion {
         Aktion::Abmelden => abmelden(),
-        Aktion::Neustart => logind_aktion("Neu starten", "CanReboot", "Reboot"),
-        Aktion::Herunterfahren => logind_aktion("Herunterfahren", "CanPowerOff", "PowerOff"),
+        Aktion::Neustart => logind_aktion(&titel(aktion), "CanReboot", "Reboot"),
+        Aktion::Herunterfahren => logind_aktion(&titel(aktion), "CanPowerOff", "PowerOff"),
         Aktion::Sperren => Err(sperren_ausfuehren(&eigenes_programm())),
     }
 }
@@ -206,16 +235,17 @@ mod tests {
 
     #[test]
     fn logind_antworten() {
-        assert_eq!(erlaubnis("yes", "Neu starten"), Ok(()));
-        assert_eq!(erlaubnis("challenge", "Neu starten"), Ok(()));
-        let e = erlaubnis("no", "Herunterfahren").unwrap_err();
+        // Ohne Katalog englisch (msgid), deutsch siehe po/de.po.
+        assert_eq!(erlaubnis("yes", "Restart"), Ok(()));
+        assert_eq!(erlaubnis("challenge", "Restart"), Ok(()));
+        let e = erlaubnis("no", "Shut Down").unwrap_err();
         assert!(
-            e.starts_with("Herunterfahren ist für diesen Benutzer nicht erlaubt"),
+            e.starts_with("Shut Down is not allowed for this user"),
             "{e}"
         );
-        let e = erlaubnis("na", "Neu starten").unwrap_err();
-        assert!(e.contains("nicht möglich"), "{e}");
-        assert!(erlaubnis("maybe", "Neu starten").is_err());
+        let e = erlaubnis("na", "Restart").unwrap_err();
+        assert!(e.contains("not possible"), "{e}");
+        assert!(erlaubnis("maybe", "Restart").is_err());
     }
 
     #[test]

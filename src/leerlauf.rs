@@ -4,8 +4,16 @@
 //! Sperrbildschirm noch (oder ist die Sitzung schon gesperrt, dann endet
 //! der neue Sperrprozess mit `finished`), wird kein zweiter gestartet.
 //! Endet mit der Wayland-Verbindung (Sitzungsende).
+//!
+//! Jeder Sperrprozess bekommt einen Warte-Thread, der ihn mit `wait()`
+//! erntet, sobald er endet (QD-050): früher geschah das nur per `try_wait`
+//! beim nächsten Leerlauf-Ereignis, und weil „Eingabe erkannt“ schon während
+//! der Sperre kommt, blieb nach dem Entsperren bis zum nächsten Leerlauf ein
+//! Zombie `[querencia-sitzu] <defunct>` stehen.
 
 use std::process::{Child, Command, Stdio};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use wayland_client::globals::{GlobalListContents, registry_queue_init};
 use wayland_client::protocol::{wl_registry, wl_seat};
@@ -17,30 +25,23 @@ use wayland_protocols::ext::idle_notify::v1::client::{
 use crate::aktion::{eigenes_programm, protokoll};
 
 struct Leerlauf {
-    sperre: Option<Child>,
+    /// `true`, solange der zuletzt gestartete Sperrprozess läuft; sein
+    /// Warte-Thread setzt es nach dem Ernten zurück.
+    sperre: Option<Arc<AtomicBool>>,
     gesperrt_mal: u32,
 }
 
 impl Leerlauf {
-    /// Räumt einen beendeten Sperrprozess ab; `true`, wenn noch einer läuft.
+    /// `true`, wenn noch ein Sperrprozess läuft (geerntet wird im Warte-Thread).
     fn sperre_laeuft(&mut self) -> bool {
-        if let Some(kind) = &mut self.sperre {
-            match kind.try_wait() {
-                Ok(Some(status)) => {
-                    protokoll(&format!("Sperrbildschirm beendet mit {status}"));
-                    self.sperre = None;
-                    false
-                }
-                Ok(None) => true,
-                Err(e) => {
-                    protokoll(&format!("Sperrprozess nicht prüfbar: {e}"));
-                    self.sperre = None;
-                    false
-                }
-            }
-        } else {
-            false
+        let laeuft = self
+            .sperre
+            .as_ref()
+            .is_some_and(|l| l.load(Ordering::Acquire));
+        if !laeuft {
+            self.sperre = None;
         }
+        laeuft
     }
 
     fn sperren(&mut self) {
@@ -62,11 +63,37 @@ impl Leerlauf {
                     kind.id(),
                     self.gesperrt_mal
                 ));
-                self.sperre = Some(kind);
+                self.sperre = Some(ernten(kind));
             }
             Err(e) => protokoll(&format!("Leerlauf: Sperre nicht startbar: {e}")),
         }
     }
+}
+
+/// Erntet `kind` in einem eigenen Thread, sobald er endet, und meldet das
+/// über die zurückgegebene Marke (`true` = läuft noch). Ist kein Thread
+/// startbar, gilt der Prozess als beendet, damit die Leerlaufsperre nicht
+/// dauerhaft blockiert; er bleibt dann bis zum Ende des Dienstes ungeerntet.
+fn ernten(mut kind: Child) -> Arc<AtomicBool> {
+    let laeuft = Arc::new(AtomicBool::new(true));
+    let signal = laeuft.clone();
+    let pid = kind.id();
+    let thread = std::thread::Builder::new()
+        .name("sperre-ernten".into())
+        .spawn(move || {
+            match kind.wait() {
+                Ok(status) => protokoll(&format!(
+                    "Sperrbildschirm beendet mit {status} (PID {pid}, geerntet)"
+                )),
+                Err(e) => protokoll(&format!("Sperrprozess {pid} nicht prüfbar: {e}")),
+            }
+            signal.store(false, Ordering::Release);
+        });
+    if let Err(e) = thread {
+        protokoll(&format!("Leerlauf: Warte-Thread nicht startbar: {e}"));
+        laeuft.store(false, Ordering::Release);
+    }
+    laeuft
 }
 
 impl Dispatch<ext_idle_notification_v1::ExtIdleNotificationV1, ()> for Leerlauf {
@@ -142,5 +169,53 @@ fn dienst(sekunden: u32) -> Result<(), String> {
         queue
             .blocking_dispatch(&mut state)
             .map_err(|e| format!("Wayland-Verbindung beendet: {e}"))?;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    /// Ein beendetes Kind wird sofort geerntet (kein `<defunct>`), ohne dass
+    /// ein weiteres Leerlauf-Ereignis kommt (QD-050).
+    #[test]
+    fn beendetes_kind_wird_geerntet() {
+        let kind = Command::new("sh")
+            .args(["-c", "exit 0"])
+            .stdin(Stdio::null())
+            .spawn()
+            .expect("sh startbar");
+        let pid = kind.id();
+        let laeuft = ernten(kind);
+        let start = Instant::now();
+        while laeuft.load(Ordering::Acquire) {
+            assert!(start.elapsed() < Duration::from_secs(5), "nicht geerntet");
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        // Nach dem Ernten gibt es den Prozesseintrag nicht mehr (auch keinen Zombie).
+        assert!(!std::path::Path::new(&format!("/proc/{pid}")).exists());
+    }
+
+    #[test]
+    fn laufendes_kind_gilt_als_laufend() {
+        let mut leerlauf = Leerlauf {
+            sperre: None,
+            gesperrt_mal: 0,
+        };
+        assert!(!leerlauf.sperre_laeuft());
+        let kind = Command::new("sleep")
+            .arg("2")
+            .stdin(Stdio::null())
+            .spawn()
+            .expect("sleep startbar");
+        leerlauf.sperre = Some(ernten(kind));
+        assert!(leerlauf.sperre_laeuft());
+        let start = Instant::now();
+        while leerlauf.sperre_laeuft() {
+            assert!(start.elapsed() < Duration::from_secs(10), "nicht geerntet");
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(leerlauf.sperre.is_none());
     }
 }
