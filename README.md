@@ -3,11 +3,27 @@
 Sitzungsfunktionen eines klassischen Desktops für Querencia Desktop
 (labwc 0.9.8, GTK 4, ohne libadwaita): Abmelden, Bildschirm sperren,
 Neu starten, Herunterfahren und Leerlaufsperre, dazu der polkit-Agent
-`querencia-polkit-agent`. Version 0.1.2.
+`querencia-polkit-agent`.
+
+> **Alpha.** Sperrbildschirm und polkit-Agent sind nicht unabhängig
+> sicherheitsgeprüft. Keine Sicherheits- oder Datenverlustgarantie.
+
+## Stand
+
+| | |
+|---|---|
+| Version | 0.1.3 (Tags `sitzung/0.1.3`, `sitzung/0.1.3-1`): Rückfragen ohne Countdown, sauberes Abmelden (QD-062) |
+| Auf der Entwicklungs-VM | live seit 20.10.2026 |
+| Letzte Prüfung | 20.10.2026: fmt, Clippy, 49 + 10 Unit-Tests; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Sprache Deutsch und Englisch je 7/7 |
+| Getestet auf | Ubuntu 26.04, labwc 0.9.8, GTK 4.22 |
+
+Änderungen je Version: [CHANGELOG.md](CHANGELOG.md).
+
+## Befehle und Aufbau
 
 ```text
-querencia-sitzung --dialog [--countdown SEK | --kein-countdown]
-querencia-sitzung --abmelden | --neustart | --herunterfahren [--countdown SEK | --kein-countdown]
+querencia-sitzung --dialog [--countdown SEK]
+querencia-sitzung --abmelden | --neustart | --herunterfahren [--countdown SEK]
 querencia-sitzung --sperren [--sofort]
 querencia-sitzung --leerlauf MINUTEN | --leerlauf-sekunden SEK
 querencia-sitzung --version | --hilfe
@@ -15,7 +31,7 @@ querencia-sitzung --version | --hilfe
 
 | Teil | Technik | Datei |
 |---|---|---|
-| Rückfragen, Gesamtdialog | GTK 4, GNOME-2-Aufbau, labwc-Rahmen; Esc, Pfeile, Enter, Mnemoniken; Countdown 60 s bei Einzelrückfragen | `src/dialog.rs` |
+| Rückfragen, Gesamtdialog | GTK 4, GNOME-2-Aufbau, labwc-Rahmen; Esc, Pfeile, Enter, Mnemoniken; seit 0.1.3 ohne Countdown (nur auf Wunsch: `--countdown SEK` oder `sitzung.ini` `[Dialog]` `Countdown=an`) | `src/dialog.rs` |
 | Abmelden | `<labwc> --exit` mit dem labwc aus `/proc/$LABWC_PID/exe` (wie das Panel) | `src/aktion.rs` |
 | Neu starten, Herunterfahren | systemd-logind D-Bus `CanReboot`/`CanPowerOff`, dann `Reboot`/`PowerOff` (interactive=true, polkit darf fragen) | `src/aktion.rs` |
 | Sperrbildschirm | ext-session-lock-v1 direkt über wayland-client (kein GTK), Cairo/Pango, eine Fläche je Ausgang, Uhr, Passwortfeld | `src/sperre.rs` |
@@ -27,9 +43,10 @@ protokolliert. Zusammen mit `QS_TESTPASSWORT` und einem `XDG_RUNTIME_DIR`
 außerhalb `/run/user/` entsperrt der Sperrbildschirm ohne PAM (nur in der
 isolierten Prüfung möglich).
 
-Bauen: [docs/building.md](docs/building.md). Prüfen (Unit-Tests, isolierte
-GUI mit eigenem labwc, eigenem D-Bus und eigenem Profil):
-[docs/testing.md](docs/testing.md).
+## Bauen und Prüfen
+
+`cargo build --release --locked`, danach `cargo fmt --all --check`, `cargo clippy --all-targets --locked -- -D warnings`, `cargo test --locked` und `python3 werkzeug/i18n.py pruefen`.
+Katalog, PAM-Dienst, Integration und die isolierte GUI-Prüfung (eigener labwc, eigener D-Bus, eigenes Profil): [docs/building.md](docs/building.md), [docs/testing.md](docs/testing.md).
 
 Gestartet werden der Leerlaufdienst (`--leerlauf`) und der polkit-Agent vom
 Autostart der Querencia-Sitzung (`querencia-runtime`), die Dialoge über
@@ -54,8 +71,9 @@ die D-Bus-Fehlerantworten des Agenten an polkitd bleiben deutsch.
 
 ## Lizenz
 
-GNU GPL, Version 3 oder neuer, siehe [LICENSE](LICENSE). Copyright 2026
-Querencia Desktop contributors. Eigener Code; aus gnome-session,
+GNU GPL, Version 3 oder neuer, siehe [LICENSE](LICENSE) (reiner Lizenztext).
+Copyright 2026 Querencia Desktop contributors; Urheberhinweis in
+[COPYRIGHT](COPYRIGHT). Eigener Code; aus gnome-session,
 gnome-screensaver und polkit-gnome wurde kein Code übernommen. Änderungen:
 [CHANGELOG.md](CHANGELOG.md).
 
