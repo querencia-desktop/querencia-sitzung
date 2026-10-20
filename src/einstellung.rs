@@ -6,17 +6,17 @@
 //! Countdown=an      # an | aus
 //! ```
 //!
-//! `Countdown=aus` nimmt Abmelden, Neu starten und Herunterfahren den
-//! Countdown: Die Rückfrage wartet, bis jemand wählt. Ohne Datei oder
-//! Eintrag gilt [`COUNTDOWN_VORGABE`]. `--countdown` und `--kein-countdown`
-//! auf der Befehlszeile gehen der Datei vor. Das Programm schreibt die
-//! Datei nie.
+//! `Countdown=an` gibt Abmelden, Neu starten und Herunterfahren einen
+//! Countdown von 60 s (er zählt nur mit Fokus, siehe `dialog.rs`). Ohne
+//! Datei oder Eintrag gilt [`COUNTDOWN_VORGABE`]: kein Countdown, die
+//! Rückfrage wartet, bis jemand wählt. `--countdown` auf der Befehlszeile
+//! geht der Datei vor. Das Programm schreibt die Datei nie.
 
 use std::path::PathBuf;
 
-/// Countdown ohne Eintrag in der Datei (Entscheidung „pausieren“,
-/// 20.10.2026: Countdown an, angehalten ohne Fokus).
-pub const COUNTDOWN_VORGABE: bool = true;
+/// Countdown ohne Eintrag in der Datei: aus (Entscheidung von pottrauschen,
+/// 20.10.2026: „lass countdown weg“).
+pub const COUNTDOWN_VORGABE: bool = false;
 
 /// Ort der Datei.
 pub fn pfad() -> PathBuf {
@@ -94,8 +94,8 @@ mod tests {
         assert_eq!(countdown_aus_text("[Dialog]\n;Countdown=aus\n"), None);
     }
 
-    // Vorgabe „pausieren“: Countdown an (beim Übersetzen geprüft).
-    const _: () = assert!(COUNTDOWN_VORGABE);
+    // Vorgabe: kein Countdown (beim Übersetzen geprüft).
+    const _: () = assert!(!COUNTDOWN_VORGABE);
 
     #[test]
     fn datei_liegt_unter_querencia() {

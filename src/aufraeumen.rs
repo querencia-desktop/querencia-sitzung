@@ -8,7 +8,7 @@
 //! Panel läuft, und der alte Benachrichtigungsdienst hält
 //! `org.freedesktop.Notifications`. Jetzt schickt Abmelden ihnen SIGTERM,
 //! wartet [`FRIST_TERM`] und erzwingt den Rest mit SIGKILL; erst danach
-//! folgt `labwc --exit`.
+//! folgen [`portale_stoppen`] und `labwc --exit`.
 //!
 //! Wer zur Sitzung gehört: Prozesse dieses Benutzers, deren Programm eines
 //! der Sitzungsprogramme ist ([`ist_sitzungsprogramm`]) und die
@@ -294,6 +294,68 @@ pub fn sitzung_beenden(labwc_pid: u32) {
     }
 }
 
+/// Portal-Dienste des User-Managers, die am Wayland-Display der Sitzung
+/// hängen.
+pub const PORTALE: &[&str] = &[
+    "xdg-desktop-portal-gtk.service",
+    "xdg-desktop-portal.service",
+];
+
+/// Die `systemctl --user`-Aufrufe für [`portale_stoppen`]: `reset-failed`,
+/// `stop`, `reset-failed`.
+pub fn portal_befehle() -> Vec<Vec<String>> {
+    ["reset-failed", "stop", "reset-failed"]
+        .iter()
+        .map(|befehl| {
+            let mut args = vec!["--user".to_string(), befehl.to_string()];
+            args.extend(PORTALE.iter().map(|u| u.to_string()));
+            args
+        })
+        .collect()
+}
+
+/// Stoppt xdg-desktop-portal und sein GTK-Backend vor `labwc --exit`
+/// (QD-062). Endet labwc zuerst, stirbt das GTK-Backend, xdg-desktop-portal
+/// startet es ohne Display neu, die Unit bleibt `failed`, und die nächste
+/// Anmeldung wartet auf ein stehendes Portal. Gestoppt startet D-Bus beide
+/// beim nächsten Bedarf frisch. Der Sitzungsstarter stoppt sie nach dem
+/// Ende von labwc noch einmal (falls ein Programm sie bis dahin wieder
+/// aktiviert hat). gvfs und document-portal bleiben. Im Trockenlauf nur
+/// eine Logzeile.
+pub fn portale_stoppen() {
+    let befehle = portal_befehle();
+    if trockenlauf() {
+        protokoll(&format!(
+            "TROCKENLAUF: würde Portale stoppen ({})",
+            PORTALE.join(", ")
+        ));
+        return;
+    }
+    let mut ergebnis = Vec::new();
+    for args in &befehle {
+        let status = std::process::Command::new("systemctl")
+            .args(args)
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+        ergebnis.push(format!(
+            "{} {}",
+            args[1],
+            match status {
+                Ok(s) if s.success() => "ok".to_string(),
+                Ok(s) => s.to_string(),
+                Err(e) => e.to_string(),
+            }
+        ));
+    }
+    protokoll(&format!(
+        "Abmelden: Portale vor labwc --exit gestoppt ({}): {}",
+        PORTALE.join(", "),
+        ergebnis.join(", ")
+    ));
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -331,6 +393,22 @@ mod tests {
         ] {
             assert!(!ist_sitzungsprogramm(name, &[]), "{name}");
         }
+    }
+
+    #[test]
+    fn portale_reset_stop_reset() {
+        let b = portal_befehle();
+        let namen: Vec<&str> = b.iter().map(|a| a[1].as_str()).collect();
+        assert_eq!(namen, ["reset-failed", "stop", "reset-failed"]);
+        for a in &b {
+            assert_eq!(a[0], "--user");
+            assert_eq!(&a[2..], PORTALE);
+        }
+        assert!(
+            !PORTALE
+                .iter()
+                .any(|u| u.contains("gvfs") || u.contains("document"))
+        );
     }
 
     #[test]

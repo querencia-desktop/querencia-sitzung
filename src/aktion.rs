@@ -2,7 +2,8 @@
 //!
 //! * Abmelden: zuerst Panel, Arbeitsfläche, Benachrichtigungen,
 //!   polkit-Agent, Leerlaufdienst und Applet-Helfer dieser Sitzung beenden
-//!   (`aufraeumen.rs`, QD-062), dann wie das Panel (QREL-04d, `session.rs`)
+//!   (`aufraeumen.rs`, QD-062), dann xdg-desktop-portal(-gtk) stoppen, dann
+//!   wie das Panel (QREL-04d, `session.rs`)
 //!   `<labwc> --exit` mit dem labwc der laufenden Sitzung aus
 //!   `/proc/$LABWC_PID/exe`; `querencia-session` räumt danach auf.
 //! * Neu starten, Herunterfahren: systemd-logind über D-Bus
@@ -67,6 +68,7 @@ pub fn abmelden() -> Result<(), String> {
     {
         crate::aufraeumen::sitzung_beenden(pid);
     }
+    crate::aufraeumen::portale_stoppen();
     if trockenlauf() {
         protokoll(&format!("TROCKENLAUF: {} --exit", labwc.display()));
         return Ok(());

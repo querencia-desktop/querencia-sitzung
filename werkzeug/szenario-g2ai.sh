@@ -1,6 +1,7 @@
 #!/bin/bash
-# G2-AI (QD-062): Countdown nur mit Fokus, Abbruch nach 60 s ohne Fokus,
-# Abschalten über sitzung.ini. Alles im Trockenlauf.
+# G2-AI (QD-062): Vorgabe ohne Countdown (Entscheidung pottrauschen 20.10.),
+# Countdown nur auf Wunsch (--countdown, sitzung.ini Countdown=an), dann nur
+# mit Fokus und Abbruch nach 60 s ohne Fokus. Alles im Trockenlauf.
 . "$(dirname "$0")/gemeinsam.sh"
 INI=$XDG_CONFIG_HOME/querencia/sitzung.ini
 mkdir -p "$(dirname "$INI")"; rm -f "$INI"
@@ -29,17 +30,29 @@ sleep 63; ende; kill $F; wait $F 2>/dev/null
 [ $RC = 0 ] && grep -q '60 s ohne Fokus, Dialog abgebrochen' "$OUT/c03.log" && grep -q '^querencia-sitzung: abgebrochen' "$OUT/c03.log" && ! grep -q 'logind\|TROCKENLAUF' "$OUT/c03.log" &&
     ok "C03 60 s ohne Fokus: Dialog bricht ab, keine Aktion (Exit 0)" || nok "C03 (Exit $RC): $(tr '\n' ';' <"$OUT/c03.log")"
 
-# C04 sitzung.ini Countdown=aus: kein Countdown
-printf '[Dialog]\nCountdown=aus\n' >"$INI"
+# C04 Vorgabe: kein Countdown, die Rückfrage wartet
+rm -f "$INI"
 START_WARTEN=1 start c04 --abmelden; shot c04-ohne-countdown; sleep 6
 zustand=$(fenster_weg); q "key Escape" "wait 800"; ende
-grep -q 'Countdown aus' "$OUT/c04.log" && [ "$zustand" = offen ] && ! grep -q TROCKENLAUF "$OUT/c04.log" &&
-    ok "C04 sitzung.ini Countdown=aus: kein Countdown, Dialog wartet; Esc bricht ab" || nok "C04 ($zustand): $(tr '\n' ';' <"$OUT/c04.log")"
+[ "$zustand" = offen ] && ! grep -q 'TROCKENLAUF\|Countdown' "$OUT/c04.log" && grep -q 'abgebrochen' "$OUT/c04.log" &&
+    ok "C04 Vorgabe ohne Countdown: Rückfrage wartet 6 s ohne Aktion; Esc bricht ab" || nok "C04 ($zustand): $(tr '\n' ';' <"$OUT/c04.log")"
 
-# C05 Befehlszeile geht vor
-START_WARTEN=1 start c05 --abmelden --countdown 2; sleep 2.5; ende
-grep -q 'TROCKENLAUF: .*labwc --exit' "$OUT/c05.log" && ! grep -q 'Countdown aus' "$OUT/c05.log" &&
-    ok "C05 --countdown 2 geht sitzung.ini vor" || nok "C05: $(tr '\n' ';' <"$OUT/c05.log")"
+# C05 Enter auf dem Standardknopf (Abbrechen) löst nichts aus
+START_WARTEN=1 start c05 --herunterfahren; q "key Return" "wait 800"; ende
+[ $RC = 0 ] && grep -q '^querencia-sitzung: abgebrochen' "$OUT/c05.log" && ! grep -q 'logind\|TROCKENLAUF' "$OUT/c05.log" &&
+    ok "C05 Enter auf Standardknopf: abgebrochen, keine Aktion" || nok "C05 (Exit $RC): $(tr '\n' ';' <"$OUT/c05.log")"
+
+# C07 sitzung.ini Countdown=an: 60-s-Countdown auf Wunsch; Befehlszeile geht vor
+printf '[Dialog]\nCountdown=an\n' >"$INI"
+START_WARTEN=1.5 start c07 --abmelden; shot c07-countdown-an; q "key Escape" "wait 800"; ende
+START_WARTEN=1 start c07b --abmelden --countdown 2; sleep 2.5; ende
+grep -q 'Countdown an' "$OUT/c07.log" && grep -q 'TROCKENLAUF: .*labwc --exit' "$OUT/c07b.log" && ! grep -q 'Countdown an' "$OUT/c07b.log" &&
+    ok "C07 sitzung.ini Countdown=an schaltet ein; --countdown 2 geht vor" || nok "C07: $(tr '\n' ';' <"$OUT/c07.log") / $(tr '\n' ';' <"$OUT/c07b.log")"
+rm -f "$INI"
+
+# C08 --kein-countdown gibt es nicht mehr
+"$BIN" --abmelden --kein-countdown >"$OUT/c08.log" 2>&1; rc=$?
+[ $rc = 2 ] && ok "C08 --kein-countdown: Exit 2 (Option entfällt)" || nok "C08 Exit $rc"
 
 # C06 Gesamtdialog mit Countdown ohne Fokus ebenfalls angehalten
 rm -f "$INI"

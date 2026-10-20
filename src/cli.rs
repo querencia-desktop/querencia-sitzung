@@ -1,16 +1,18 @@
 //! Befehlszeile von `querencia-sitzung`: genau ein Befehl je Aufruf.
 //!
 //! ```text
-//! querencia-sitzung --dialog [--countdown SEK | --kein-countdown]
+//! querencia-sitzung --dialog [--countdown SEK]
 //! querencia-sitzung --abmelden | --neustart | --herunterfahren
-//!                   [--countdown SEK | --kein-countdown]
+//!                   [--countdown SEK]
 //! querencia-sitzung --sperren [--sofort]
 //! querencia-sitzung --leerlauf MINUTEN | --leerlauf-sekunden SEK
 //! querencia-sitzung --version | --hilfe
 //! ```
 //!
-//! Die Rückfragen mit nur einer Aktion zählen wie GNOME 2 sechzig Sekunden
-//! herunter; `--dialog` zählt nur auf Wunsch (dann bis zum Abmelden).
+//! Kein Dialog zählt von selbst herunter: Sie warten, bis jemand wählt
+//! (Entscheidung von pottrauschen, 20.10.2026, QD-062). Den Countdown gibt es nur
+//! auf Wunsch: `--countdown SEK` oder `[Dialog] Countdown=an` in
+//! `sitzung.ini` (dann 60 s wie GNOME 2 für die Rückfragen).
 
 use std::fmt;
 
@@ -100,7 +102,7 @@ where
     let mut befehle: Vec<&str> = Vec::new();
     let mut aktion = None;
     let mut sofort = false;
-    let mut countdown: Option<Option<u32>> = None;
+    let mut countdown: Option<u32> = None;
     let mut leerlauf = None;
     let mut i = 0;
     while i < args.len() {
@@ -138,10 +140,9 @@ where
             "--hilfe" | "--help" | "-h" => befehle.push("--hilfe"),
             "--sofort" => sofort = true,
             "--countdown" => {
-                countdown = Some(Some(zahl(arg, naechstes, COUNTDOWN_MAX)?));
+                countdown = Some(zahl(arg, naechstes, COUNTDOWN_MAX)?);
                 i += 1;
             }
-            "--kein-countdown" => countdown = Some(None),
             _ => return fehler(format!("unbekannte Option: {arg} (siehe --hilfe)")),
         }
         i += 1;
@@ -166,15 +167,13 @@ where
         )
     {
         return fehler(
-            "--countdown und --kein-countdown gelten nur für --dialog, --abmelden, --neustart und --herunterfahren",
+            "--countdown gilt nur für --dialog, --abmelden, --neustart und --herunterfahren",
         );
     }
     Ok(match befehl {
         "--version" => Befehl::Version,
         "--hilfe" => Befehl::Hilfe,
-        "--dialog" => Befehl::Dialog {
-            countdown: countdown.unwrap_or(None),
-        },
+        "--dialog" => Befehl::Dialog { countdown },
         "--leerlauf" | "--leerlauf-sekunden" => Befehl::Leerlauf {
             sekunden: leerlauf.expect("Leerlaufzeit geparst"),
         },
@@ -185,26 +184,28 @@ where
         },
         _ => Befehl::Rueckfrage {
             aktion: aktion.expect("Aktion gesetzt"),
-            countdown: countdown.unwrap_or(Some(COUNTDOWN_STANDARD)),
+            countdown,
         },
     })
 }
 
-/// Ob `args` den Countdown ausdrücklich festlegen (`--countdown` oder
-/// `--kein-countdown`); dann gilt die Befehlszeile, nicht `sitzung.ini`.
+/// Ob `args` den Countdown ausdrücklich festlegen (`--countdown`); dann
+/// gilt die Befehlszeile, nicht `sitzung.ini`.
 pub fn countdown_ausdruecklich<S: AsRef<str>>(args: &[S]) -> bool {
-    args.iter()
-        .any(|a| matches!(a.as_ref(), "--countdown" | "--kein-countdown"))
+    args.iter().any(|a| a.as_ref() == "--countdown")
 }
 
-/// Für `Countdown=aus` in `sitzung.ini`: Dialog und Rückfragen warten, bis
-/// jemand wählt; andere Befehle bleiben, wie sie sind.
-pub fn ohne_countdown(befehl: Befehl) -> Befehl {
+/// Für `Countdown=an` in `sitzung.ini`: Abmelden, Neu starten und
+/// Herunterfahren zählen [`COUNTDOWN_STANDARD`] Sekunden herunter; andere
+/// Befehle bleiben, wie sie sind.
+pub fn mit_countdown(befehl: Befehl) -> Befehl {
     match befehl {
-        Befehl::Dialog { .. } => Befehl::Dialog { countdown: None },
-        Befehl::Rueckfrage { aktion, .. } => Befehl::Rueckfrage {
+        Befehl::Rueckfrage {
             aktion,
             countdown: None,
+        } if aktion != Aktion::Sperren => Befehl::Rueckfrage {
+            aktion,
+            countdown: Some(COUNTDOWN_STANDARD),
         },
         andere => andere,
     }
@@ -215,21 +216,21 @@ Aufruf: querencia-sitzung BEFEHL [OPTIONEN]
 
 Befehle (genau einer):
   --dialog            Abmelden, Bildschirm sperren, Neu starten, Herunterfahren
-  --abmelden          Abmelden mit Rückfrage (Countdown 60 s)
+  --abmelden          Abmelden mit Rückfrage
   --sperren           Bildschirm sperren mit Rückfrage
   --sperren --sofort  Bildschirm sofort sperren (Tastenkürzel, Leerlauf)
-  --neustart          Neu starten mit Rückfrage (Countdown 60 s)
-  --herunterfahren    Herunterfahren mit Rückfrage (Countdown 60 s)
+  --neustart          Neu starten mit Rückfrage
+  --herunterfahren    Herunterfahren mit Rückfrage
   --leerlauf MIN      Leerlaufdienst: sperrt nach MIN Minuten ohne Eingabe
   --leerlauf-sekunden SEK   dasselbe in Sekunden (für Prüfungen)
   --version, --hilfe
 
 Optionen:
-  --countdown SEK     Countdown in Sekunden (1 bis 3600)
-  --kein-countdown    kein automatisches Auslösen
-  Der Countdown zählt nur, solange der Dialog aktiv ist, und bricht nach
-  60 s ohne Fokus ab. Abschalten für alle Dialoge: ~/.config/querencia/
-  sitzung.ini mit [Dialog] Countdown=aus (die Befehlszeile geht vor).
+  --countdown SEK     Countdown in Sekunden (1 bis 3600); ohne ihn wartet der
+                      Dialog, bis jemand wählt. Er zählt nur, solange der
+                      Dialog aktiv ist, und bricht nach 60 s ohne Fokus ab.
+                      Für alle Rückfragen einschalten: ~/.config/querencia/
+                      sitzung.ini mit [Dialog] Countdown=an (60 s).
 
 Umgebung:
   QS_TROCKENLAUF=1    Abmelden, Neu starten und Herunterfahren werden nur
@@ -255,14 +256,11 @@ mod tests {
                 countdown: Some(30)
             })
         );
-        assert_eq!(
-            p(&["--dialog", "--kein-countdown"]),
-            Ok(Befehl::Dialog { countdown: None })
-        );
+        assert!(p(&["--dialog", "--kein-countdown"]).is_err());
     }
 
     #[test]
-    fn rueckfragen_zaehlen_sechzig_sekunden() {
+    fn rueckfragen_warten_ohne_countdown() {
         for (arg, aktion) in [
             ("--abmelden", Aktion::Abmelden),
             ("--neustart", Aktion::Neustart),
@@ -272,16 +270,9 @@ mod tests {
                 p(&[arg]),
                 Ok(Befehl::Rueckfrage {
                     aktion,
-                    countdown: Some(60)
+                    countdown: None
                 }),
                 "{arg}"
-            );
-            assert_eq!(
-                p(&[arg, "--kein-countdown"]),
-                Ok(Befehl::Rueckfrage {
-                    aktion,
-                    countdown: None
-                })
             );
             assert_eq!(
                 p(&["--countdown", "5", arg]),
@@ -290,6 +281,7 @@ mod tests {
                     countdown: Some(5)
                 })
             );
+            assert!(p(&[arg, "--kein-countdown"]).is_err(), "{arg}");
         }
     }
 
@@ -359,22 +351,36 @@ mod tests {
     }
 
     #[test]
-    fn countdown_ausdruecklich_und_abschalten() {
+    fn countdown_ausdruecklich_und_einschalten() {
         assert!(countdown_ausdruecklich(&["--abmelden", "--countdown", "3"]));
-        assert!(countdown_ausdruecklich(&["--kein-countdown", "--neustart"]));
         assert!(!countdown_ausdruecklich(&["--abmelden"]));
         assert_eq!(
-            ohne_countdown(p(&["--abmelden"]).unwrap()),
+            mit_countdown(p(&["--abmelden"]).unwrap()),
             Befehl::Rueckfrage {
                 aktion: Aktion::Abmelden,
+                countdown: Some(COUNTDOWN_STANDARD)
+            }
+        );
+        // ausdrücklicher Wert bleibt, Sperren und Gesamtdialog zählen nicht
+        assert_eq!(
+            mit_countdown(p(&["--neustart", "--countdown", "9"]).unwrap()),
+            Befehl::Rueckfrage {
+                aktion: Aktion::Neustart,
+                countdown: Some(9)
+            }
+        );
+        assert_eq!(
+            mit_countdown(p(&["--sperren"]).unwrap()),
+            Befehl::Rueckfrage {
+                aktion: Aktion::Sperren,
                 countdown: None
             }
         );
         assert_eq!(
-            ohne_countdown(p(&["--dialog", "--countdown", "9"]).unwrap()),
+            mit_countdown(p(&["--dialog"]).unwrap()),
             Befehl::Dialog { countdown: None }
         );
-        assert_eq!(ohne_countdown(Befehl::Version), Befehl::Version);
+        assert_eq!(mit_countdown(Befehl::Version), Befehl::Version);
     }
 
     #[test]

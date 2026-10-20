@@ -61,6 +61,9 @@ auswerten_a02() {
     local nb nx; nb=$(grep -n 'alle Sitzungsprogramme beendet' "$log" | cut -d: -f1); nx=$(grep -n -- '--exit beendet mit exit status: 0' "$log" | cut -d: -f1)
     grep -q 'Status: beendet' "$OUT/status-szenario-g2ai-abmelden.txt" && [ -n "$nb" ] && [ -n "$nx" ] && [ "$nb" -lt "$nx" ] &&
         echo "PASS A02c erst Sitzungsprogramme beendet (Zeile $nb), dann labwc --exit (Zeile $nx); isolierter labwc endete" || echo "FAIL A02c nb=$nb nx=$nx $(cat "$OUT/status-szenario-g2ai-abmelden.txt")"
+    local np; np=$(grep -n 'Portale vor labwc --exit gestoppt' "$log" | cut -d: -f1)
+    [ -n "$np" ] && [ -n "$nb" ] && [ -n "$nx" ] && [ "$nb" -lt "$np" ] && [ "$np" -lt "$nx" ] &&
+        echo "PASS A02e Reihenfolge: Sitzungsprogramme (Zeile $nb), Portale (Zeile $np), labwc --exit (Zeile $nx)" || echo "FAIL A02e nb=$nb np=$np nx=$nx"
     local zeile; zeile=$(grep -E '^t=[0-9]+ K[0-9]+ K[0-9]+ $' "$OUT/a02-beobachter.txt" | head -1)
     [ -n "$zeile" ] && echo "PASS A02d Prozessliste nachher: nur noch die Köder ($zeile)" || echo "FAIL A02d $(tail -3 "$OUT/a02-beobachter.txt" | tr '\n' ';')"
 }

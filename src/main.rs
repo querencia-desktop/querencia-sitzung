@@ -64,17 +64,18 @@ fn main() {
     std::process::exit(code);
 }
 
-/// `sitzung.ini` kann den Countdown abschalten, außer die Befehlszeile legt
-/// ihn fest (QD-062).
+/// Ohne Countdown wartet jeder Dialog, bis jemand wählt (QD-062).
+/// `sitzung.ini` mit `Countdown=an` schaltet ihn ein, außer die
+/// Befehlszeile legt ihn fest.
 fn countdown_einstellen(befehl: Befehl, args: &[String]) -> Befehl {
     if cli::countdown_ausdruecklich(args) {
         return befehl;
     }
     let (an, herkunft) = einstellung::countdown();
     if an {
-        befehl
+        aktion::protokoll(&format!("Countdown an ({herkunft})"));
+        cli::mit_countdown(befehl)
     } else {
-        aktion::protokoll(&format!("Countdown aus ({herkunft})"));
-        cli::ohne_countdown(befehl)
+        befehl
     }
 }

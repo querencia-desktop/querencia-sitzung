@@ -29,44 +29,44 @@ msgstr "Sitzung"
 msgid "Log out, lock the screen, restart or shut down"
 msgstr "Abmelden, Bildschirm sperren, Neu starten oder Herunterfahren"
 
-#: src/aktion.rs:63
+#: src/aktion.rs:64
 msgid "Cannot log out: no labwc of this session (LABWC_PID)"
 msgstr "Abmelden nicht möglich: kein labwc dieser Sitzung (LABWC_PID)"
 
-#: src/aktion.rs:79
+#: src/aktion.rs:81
 #, no-c-format
 msgid "{program} --exit failed: {error}"
 msgstr "{program} --exit fehlgeschlagen: {error}"
 
-#: src/aktion.rs:91
+#: src/aktion.rs:93
 #, no-c-format
 msgid "{program} --exit reported {status}"
 msgstr "{program} --exit meldet {status}"
 
 #. TRANSLATORS: {action} ist „Restart“ oder „Shut Down“.
-#: src/aktion.rs:108
+#: src/aktion.rs:110
 #, no-c-format
 msgid ""
 "{action} is not allowed for this user (logind: no). Please run it at the console or as an administrator."
 msgstr ""
 "{action} ist für diesen Benutzer nicht erlaubt (logind: no). Bitte an der Konsole oder als Administrator ausführen."
 
-#: src/aktion.rs:113
+#: src/aktion.rs:115
 #, no-c-format
 msgid "{action} is not possible on this system (logind: na)."
 msgstr "{action} ist auf diesem System nicht möglich (logind: na)."
 
-#: src/aktion.rs:117
+#: src/aktion.rs:119
 #, no-c-format
 msgid "{action}: unexpected answer from logind: “{answer}”"
 msgstr "{action}: unerwartete Antwort von logind: „{answer}“"
 
-#: src/aktion.rs:131
+#: src/aktion.rs:133
 #, no-c-format
 msgid "System D-Bus not reachable: {error}"
 msgstr "System-D-Bus nicht erreichbar: {error}"
 
-#: src/aktion.rs:188
+#: src/aktion.rs:190
 #, no-c-format
 msgid "Cannot start the lock screen ({program}): {error}"
 msgstr "Sperrbildschirm nicht startbar ({program}): {error}"

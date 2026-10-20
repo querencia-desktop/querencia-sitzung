@@ -32,43 +32,43 @@ msgstr ""
 msgid "Log out, lock the screen, restart or shut down"
 msgstr ""
 
-#: src/aktion.rs:63
+#: src/aktion.rs:64
 msgid "Cannot log out: no labwc of this session (LABWC_PID)"
 msgstr ""
 
-#: src/aktion.rs:79
+#: src/aktion.rs:81
 #, no-c-format
 msgid "{program} --exit failed: {error}"
 msgstr ""
 
-#: src/aktion.rs:91
+#: src/aktion.rs:93
 #, no-c-format
 msgid "{program} --exit reported {status}"
 msgstr ""
 
 #. TRANSLATORS: {action} ist „Restart“ oder „Shut Down“.
-#: src/aktion.rs:108
+#: src/aktion.rs:110
 #, no-c-format
 msgid ""
 "{action} is not allowed for this user (logind: no). Please run it at the console or as an administrator."
 msgstr ""
 
-#: src/aktion.rs:113
+#: src/aktion.rs:115
 #, no-c-format
 msgid "{action} is not possible on this system (logind: na)."
 msgstr ""
 
-#: src/aktion.rs:117
+#: src/aktion.rs:119
 #, no-c-format
 msgid "{action}: unexpected answer from logind: “{answer}”"
 msgstr ""
 
-#: src/aktion.rs:131
+#: src/aktion.rs:133
 #, no-c-format
 msgid "System D-Bus not reachable: {error}"
 msgstr ""
 
-#: src/aktion.rs:188
+#: src/aktion.rs:190
 #, no-c-format
 msgid "Cannot start the lock screen ({program}): {error}"
 msgstr ""
