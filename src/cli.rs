@@ -197,7 +197,8 @@ pub fn countdown_ausdruecklich<S: AsRef<str>>(args: &[S]) -> bool {
         .any(|a| matches!(a.as_ref(), "--countdown" | "--kein-countdown"))
 }
 
-/// `befehl` ohne Countdown.
+/// Für `Countdown=aus` in `sitzung.ini`: Dialog und Rückfragen warten, bis
+/// jemand wählt; andere Befehle bleiben, wie sie sind.
 pub fn ohne_countdown(befehl: Befehl) -> Befehl {
     match befehl {
         Befehl::Dialog { .. } => Befehl::Dialog { countdown: None },

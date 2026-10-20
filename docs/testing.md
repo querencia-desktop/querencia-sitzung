@@ -59,3 +59,21 @@ Für `LANGUAGE=de` braucht die Binary den Katalog daneben
 `nachweis/gui/ergebnis.txt`, Bilder und Programmprotokolle daneben; die Läufe
 überschreiben die eingecheckten Belege, danach
 `git checkout -- nachweis/ && git clean -fq nachweis/gui/`.
+
+## Countdown und Abmelden (0.1.3, G2-AI, QD-062)
+
+```bash
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-g2ai.sh 1 220           # C01–C06, Trockenlauf
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-g2ai-abmelden.sh 1 60   # A02a–d, echtes Abmelden im isolierten labwc
+```
+
+- C01–C06: Der Countdown zählt nur mit Fokus. Ein kleines `foot`-Fenster
+  („fokusdieb“) nimmt den Fokus. Nach 60 s ohne Fokus bricht der Dialog ab.
+  `sitzung.ini` mit `Countdown=aus` schaltet den Countdown ab; die
+  Befehlszeile geht vor.
+- A02: Der Dialog beendet fünf Sitzungsprogramme, darunter Platzhalter aus
+  `werkzeug/platzhalter.c` (einer ignoriert SIGTERM). Köder müssen bleiben:
+  gleiches Programm mit anderer `LABWC_PID` und ein Benutzerprogramm.
+  Erst danach folgt `labwc --exit`.
+- Ohne Eingabegerät hat der headless labwc keine Tastatur am Sitz, dann wird
+  kein Fenster aktiv. `eingabe.sh` steckt eine virtuelle Tastatur an.
