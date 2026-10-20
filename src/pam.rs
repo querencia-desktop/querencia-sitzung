@@ -331,7 +331,10 @@ mod tests {
     /// Echte PAM-Prüfung mit einem sicher falschen Passwort: beweist, dass
     /// Bibliothek, Dienst und Konversation funktionieren (der Dienst
     /// `login` wartet dabei drei Sekunden). Kein echtes Passwort im Test.
+    /// Der Versuch zählt als Fehlversuch des aufrufenden Kontos, deshalb
+    /// läuft der Test nur ausdrücklich: `cargo test -- --ignored`.
     #[test]
+    #[ignore = "echter PAM-Versuch gegen das Konto des Aufrufers; nur mit --ignored in einer Wegwerf-Umgebung"]
     fn falsches_passwort_wird_abgelehnt() {
         let benutzer = std::env::var("USER").unwrap_or_else(|_| "nobody".to_string());
         match pruefen("login", &benutzer, "querencia-sicher-falsch-\u{1F512}") {

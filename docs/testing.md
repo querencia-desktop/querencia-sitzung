@@ -3,13 +3,20 @@
 ```bash
 cargo fmt --all --check
 env -u WAYLAND_DISPLAY -u DISPLAY cargo clippy --all-targets --locked -- -D warnings
-env -u WAYLAND_DISPLAY -u DISPLAY cargo test --locked -- --skip falsches_passwort_wird_abgelehnt
+env -u WAYLAND_DISPLAY -u DISPLAY cargo test --locked
 python3 werkzeug/i18n.py pruefen          # .pot aktuell, de.po vollständig
 ```
 
 `falsches_passwort_wird_abgelehnt` ruft echtes PAM (Dienst `login`) mit dem
 eigenen Benutzer und einem falschen Passwort auf; das zählt als Fehlversuch
-des echten Kontos und läuft deshalb nur mit ausdrücklicher Freigabe.
+des echten Kontos. Der Test ist deshalb mit `#[ignore]` markiert und läuft
+nur bewusst, in einer Wegwerf-Umgebung (Test-VM, Container mit eigenem
+Konto):
+
+```bash
+env -u WAYLAND_DISPLAY -u DISPLAY cargo test --locked -- --ignored falsches_passwort_wird_abgelehnt
+```
+
 `logind_can_reboot_antwortet` fragt `CanReboot` am Systembus (nur lesend).
 
 GUI nur **isoliert**: eigener headless labwc 0.9.8, eigener D-Bus, eigenes
