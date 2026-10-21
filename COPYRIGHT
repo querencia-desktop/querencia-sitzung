@@ -14,3 +14,8 @@ the file LICENSE for more details.
 Dateien mit eigenem Lizenzvermerk behalten diesen (README.md, Abschnitt
 „Lizenz“): die mit wayland-scanner erzeugten Protokolldateien unter
 werkzeug/protokolle/.
+
+Das Querencia-Logo ist ein Kennzeichen des Projekts und von der Lizenz
+ausgenommen; es gilt MARKE.md. The Querencia logo is a mark of the project
+and is not covered by this licence; see MARKE.md.
+Dateien/files: data/logo/querencia-logo*
