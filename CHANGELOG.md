@@ -40,9 +40,8 @@ Englisch und Deutsch über GNU gettext, Kindprozesse geerntet (G2-AH):
   `[querencia-sitzu] <defunct>` bis zum nächsten Leerlauf stehen.
 - GUI-Prüfung: `QS_SPRACHE`, `QS_GROESSE`, neues `szenario-sprache.sh`;
   `QS_OHNE_SYSTEM=1` (Vorgabe) lässt Fälle mit echtem logind/PAM/polkit aus.
-- Doku nach ENTSCHEIDUNGEN Nr. 17 (`docs/building.md`, `docs/testing.md`,
-  Arbeitsregeln), Lizenzkopf (Nr. 14 Q5), dieses
-  Änderungsprotokoll; Verweise ins Leere (GH-3) in `isoliert.py` ersetzt.
+- Doku unter `docs/` (`docs/building.md`, `docs/testing.md`), Lizenzkopf,
+  dieses Änderungsprotokoll; tote Verweise in `isoliert.py` ersetzt.
 
 ## 0.1.1-2 – 2026-10-19
 

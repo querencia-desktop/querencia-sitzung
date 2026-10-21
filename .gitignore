@@ -13,3 +13,5 @@ __pycache__/
 /integration/vorschlag-013/querencia-sitzung
 /integration/vorschlag-013/querencia-polkit-agent
 /integration/vorschlag-013/share/
+# Ausgaben der isolierten GUI-Prüfung
+/nachweis/
