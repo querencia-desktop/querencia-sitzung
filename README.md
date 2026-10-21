@@ -3,8 +3,10 @@
 Sitzungsfunktionen eines klassischen Desktops für alle, die Querencia Desktop
 benutzen: Abmelden, Bildschirm sperren, Neu starten, Herunterfahren,
 Leerlaufsperre und ein polkit-Legitimierungsagent. Teil von
-[Querencia Desktop](https://github.com/querencia-desktop/querencia) – einer
+[Querencia Desktop](https://querencialinux.org) – einer
 klassischen Desktopumgebung im GNOME-2-Stil für Wayland (labwc, Rust, GTK 4).
+Installiert wird es zusammen mit Querencia Desktop aus der APT-Quelle;
+Anleitung auf <https://querencialinux.org>.
 
 *English summary:* Log out, lock screen, restart, shut down, idle lock and a
 polkit authentication agent for labwc, modelled on the GNOME 2 session

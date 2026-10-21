@@ -2,11 +2,11 @@
 
 ## 0.1.3 – 2026-10-20
 
-Sauberes Abmelden, Rückfragen ohne Countdown (QD-062, G2-AI):
+Sauberes Abmelden, Rückfragen ohne Countdown:
 
 - Abmelden, Neu starten, Herunterfahren und der Gesamtdialog zählen nicht
-  mehr von selbst herunter. Sie warten, bis jemand wählt (Entscheidung des
-  Besitzers, 20.10.2026: „lass countdown weg“). „Abbrechen“ bleibt der
+  mehr von selbst herunter. Sie warten, bis jemand wählt (Entscheidung vom
+  20.10.2026: Countdown entfällt). „Abbrechen“ bleibt der
   Standardknopf für Esc und Enter. Am 20.10. hatte ein stehengelassener
   Dialog hinter einem anderen Fenster nach 60 s abgemeldet.
 - Den Countdown gibt es nur noch auf Wunsch: `--countdown SEK` oder
@@ -25,7 +25,7 @@ Sauberes Abmelden, Rückfragen ohne Countdown (QD-062, G2-AI):
 
 ## 0.1.2 – 2026-10-20
 
-Englisch und Deutsch über GNU gettext, Kindprozesse geerntet (G2-AH):
+Englisch und Deutsch über GNU gettext, Kindprozesse geerntet:
 
 - Oberflächentexte englisch im Code (Wortschatz gnome-session 2.30 und
   polkit-gnome), Deutsch aus `po/de.po` mit dem bisherigen Wortlaut:
@@ -35,7 +35,7 @@ Englisch und Deutsch über GNU gettext, Kindprozesse geerntet (G2-AH):
   vorerst deutsch.
 - `i18n::init()` setzt die Locale am Programmanfang (Dialogtexte entstehen
   vor dem GTK-Start).
-- QD-050: Der Leerlaufdienst erntet jeden Sperrprozess sofort in einem
+- Der Leerlaufdienst erntet jeden Sperrprozess sofort in einem
   Warte-Thread. Bisher blieb nach dem Entsperren ein Zombie
   `[querencia-sitzu] <defunct>` bis zum nächsten Leerlauf stehen.
 - GUI-Prüfung: `QS_SPRACHE`, `QS_GROESSE`, neues `szenario-sprache.sh`;
@@ -45,15 +45,15 @@ Englisch und Deutsch über GNU gettext, Kindprozesse geerntet (G2-AH):
 
 ## 0.1.1-2 – 2026-10-19
 
-Eigenes Programmsymbol (G2-V, QD-034) statt Logo-Platzhalter; Programme
+Eigenes Programmsymbol statt Logo-Platzhalter; Programme
 unverändert.
 
 ## 0.1.1 – 2026-10-18
 
-`querencia-polkit-agent` (polkit-Legitimierungsagent der Sitzung, G2-K),
+`querencia-polkit-agent` (polkit-Legitimierungsagent der Sitzung),
 Integration und Prüfung erweitert; Menüeintrag mit absoluten Pfaden (0.1.1-1).
 
 ## 0.1.0 – 2026-10-18
 
-Erster Stand (G2-K): Dialog „Sitzung beenden“, Rückfragen mit Countdown,
+Erster Stand: Dialog „Sitzung beenden“, Rückfragen mit Countdown,
 Sperrbildschirm über ext-session-lock mit PAM, Leerlaufsperre.

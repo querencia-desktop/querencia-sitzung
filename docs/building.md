@@ -44,5 +44,4 @@ Skripte unter `integration/` stellen die unveränderliche Ablage
 Links `~/opt/querencia/bin/querencia-sitzung` und
 `…/querencia-polkit-agent` um. Sie starten und beenden keinen Prozess;
 laufende Dienste der Sitzung bleiben bis zur nächsten Anmeldung. Der Ordner
-enthält feste Pfade der VM und wird vor der Veröffentlichung herausgefiltert
-(ENTSCHEIDUNGEN Nr. 13).
+enthält feste Pfade der VM und wird vor der Veröffentlichung herausgefiltert.
