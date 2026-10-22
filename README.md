@@ -14,7 +14,7 @@ Neu starten, Herunterfahren und Leerlaufsperre, dazu der polkit-Agent
 |---|---|
 | Version | 0.1.4 (Tags `sitzung/0.1.4`, `sitzung/0.1.4-int`): Dienst `org.freedesktop.ScreenSaver` (QD-104), Dialoge im Dunkelmodus (QD-109); davor 0.1.3: Rückfragen ohne Countdown, sauberes Abmelden (QD-062) |
 | Auf der Entwicklungs-VM | 0.1.3 live seit 20.10.2026; 0.1.4 wartet auf Freigabe |
-| Letzte Prüfung | 20.10.2026: fmt, Clippy, 49 + 10 Unit-Tests; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Sprache Deutsch und Englisch je 7/7 |
+| Letzte Prüfung | 22.10.2026 (0.1.4): fmt, Clippy, 56 + 10 Unit-Tests; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Countdown/Abmelden 14/14, Sprache Deutsch und Englisch je 7/7, ScreenSaver-Dienst 15/15, Dunkelmodus 8/8, Emoji-Titel 11 Fotos |
 | Getestet auf | Ubuntu 26.04, labwc 0.9.8, GTK 4.22 |
 
 Änderungen je Version: [CHANGELOG.md](CHANGELOG.md).

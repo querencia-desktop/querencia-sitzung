@@ -24,7 +24,15 @@ gestartet() { grep -c 'sperren --sofort gestartet' "$OUT/s00.log"; }
 zeilen() { local i; for ((i = 0; i < $2 * 10; i++)); do [ "$(wc -l <"$1")" -ge "$3" ] && return 0; sleep 0.1; done; return 1; }
 # Wartet bis $2 Sekunden auf Muster $1 im Dienstprotokoll.
 im_log() { local i; for ((i = 0; i < $2 * 10; i++)); do grep -q -- "$1" "$OUT/s00.log" && return 0; sleep 0.1; done; return 1; }
-entsperren() { q "type querencia-test" "key Return" "wait 1500"; }
+# Erst tippen, wenn die Sperrfläche Eingaben nimmt (sonst gehen Zeichen
+# verloren und die Sperre bleibt, Erstlauf Release 03:58), danach warten,
+# bis GetActive false meldet.
+entsperren() {
+    sleep 1
+    q "type querencia-test" "key Return" "wait 800"
+    local i; for ((i = 0; i < 30; i++)); do [ "$(aktiv)" = "b false" ] && return 0; sleep 0.1; done
+    echo "INFO entsperren: GetActive bleibt true" >>"$R"
+}
 zombies() { ps -o pid=,stat= --ppid "$L" 2>/dev/null | awk '$2 ~ /^Z/ {print $1}' | tr '\n' ' '; }
 
 export QS_TESTPASSWORT=querencia-test
