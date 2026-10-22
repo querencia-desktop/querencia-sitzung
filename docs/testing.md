@@ -129,8 +129,11 @@ QS_LANG=C.UTF-8 QS_RC_XML=<querencia-runtime>/session/querencia/labwc/rc.xml \
   das Szenario ein `foot`-Fenster mit Serverdekoration.
   `werkzeug/titelleisten.py` stapelt die Titelleisten zu einem Bild.
   - Grenze: labwc zeichnet Titel mit Pango und dem Fallback von
-    fontconfig. Kästchen mit Hex-Ziffern erscheinen nur für Zeichen, die
-    keine installierte Schrift hat, etwa Private Use (U+E000), Symbols for
-    Legacy Computing (U+1FB00), Hieroglyphen (U+13000) oder Tibetisch
-    (U+0F00). Abhilfe sind weitere Schriften im System, nicht die
-    `rc.xml`.
+    fontconfig. Kästchen mit Hex-Ziffern erscheinen für Zeichen, die keine
+    installierte Schrift hat. Auf der Entwicklungs-VM (nur DejaVu, FreeFont,
+    Noto Color Emoji) sind das ganze Schriften: CJK (Chinesisch, Japanisch,
+    Koreanisch), Vollbreite-Formen (U+FF00–U+FFEF), dazu Teile von Arabisch
+    (Darstellungsformen-A, z. B. U+FDFD, Extended-B), Symbols for Legacy
+    Computing und Private Use. Der Befund vom 22.10. („4K #“ und rund 20
+    Kästchen, Fall t12/t13) ist so nachgestellt. Abhilfe sind weitere
+    Schriften im System (etwa Noto CJK), nicht die `rc.xml`.

@@ -30,12 +30,13 @@ Bildschirmschoner-Dienst, Dunkelmodus der Dialoge (QD-104, QD-109, QD-123):
   zeigte sie in diesem Fall hell, bis das Schema wechselte. Die Dialoge
   melden die Einstellung `gtk-interface-color-scheme` nach dem Start
   einmal neu (wie das Panel). Eigene Farben haben sie weiterhin nicht.
-- Emoji in der labwc-Titelleiste (QD-123): Isoliert erscheinen einfache
-  Emoji, Flaggen, Flaggen mit Tag-Folgen, ZWJ-Folgen, Hauttöne und Emoji
-  17 richtig. Tag-Zeichen ohne Flagge bleiben unsichtbar. Kästchen mit
-  Hex-Ziffern zeigt labwc nur für Zeichen, die keine installierte Schrift
-  hat (das System hat nur DejaVu, FreeFont und Noto Color Emoji). Keine
-  Änderung an `rc.xml`, Grenze in `docs/testing.md`.
+- Kästchen in der labwc-Titelleiste (QD-123): nachgestellt mit „4K #“ und
+  einem Hashtag in Japanisch/Koreanisch oder in Vollbreite-Zeichen. Das
+  System hat keine Schrift für CJK und für Vollbreite-Formen (nur DejaVu,
+  FreeFont, Noto Color Emoji). labwc zeigt dafür Kästchen mit Hex-Ziffern.
+  Emoji (auch Tag-Flaggen, Emoji 17, ZWJ, VS16) und Arabisch mit Emoji
+  erscheinen richtig. Keine Änderung an `rc.xml`; Abhilfe sind weitere
+  Schriften im System, Grenze in `docs/testing.md`.
 - Prüfwerkzeug: Szenarien `szenario-schoner.sh`, `szenario-dunkel.sh`
   (Portal-Ersatz aus der Dunkel-Prüfung von Screenshot 0.2.10) und
   `szenario-emoji.sh`; `isoliert.py` kennt `QS_LAUFZEIT`, `QS_PORTAL`,

@@ -21,6 +21,13 @@ TITEL = [
     ("t9-sequenzen", "Hautton \U0001F44D\U0001F3FD Tastenkappe 1\ufe0f\u20e3 Sark \U0001F1E8\U0001F1F6"),
     ("t10-gross-tags", f"Tags gross A{tags('HIDDEN TEXT')}B Sprache \U000E0001{tags('de')}C"),
     ("t11-ohne-schrift", "Ohne Schrift \ue000 \U0001FB00 \U00013000 \u0f00"),
+    # Matrix nach dem Befund 02:54 (Startsession): „4K #“ + rund 20 Kästchen,
+    # arabischer Text richtig; Sitzung unter de_DE.UTF-8.
+    ("t12-cjk-hashtag", "4K #\u6771\u4eac\u30bf\u30ef\u30fc\u306e\u591c\u666f \ud55c\uad6d\uc5b4 https://t.co/x / X"),
+    ("t13-vollbreite", "4K #\uff2e\uff25\uff37\uff33\uff3f\uff12\uff10\uff12\uff16 https://t.co/x / X"),
+    ("t14-arabisch-emoji", "4K #\u0645\u0631\u062d\u0628\u0627_\u0628\u0643\u0645 \U0001F319\u2728 \u0627\u0644\u0644\u064a\u0644 \u2764\ufe0f https://t.co/x / X"),
+    ("t15-arabisch-sonder", "4K #\ufdfd \ufdfa \u0870\u0871 \U0001EE00\U0001EE01 \u0627\u0644\u0642\u0645\u0631 / X"),
+    ("t16-bidi-vs16", "4K #\u2600\ufe0f\u0634\u0645\u0633\U0001F1F8\U0001F1E6\u200f\U0001F3D9\ufe0f \u0645\u062f\u064a\u0646\u0629 / X"),
     ("t7-post", f"Jemand auf X: „Tor! {SCHWARZ}{tags('gbeng')}{ENDE}⚽\U0001F525“ / X — Mozilla Firefox"),
 ]
 
