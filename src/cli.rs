@@ -223,6 +223,9 @@ Befehle (genau einer):
   --herunterfahren    Herunterfahren mit Rückfrage
   --leerlauf MIN      Leerlaufdienst: sperrt nach MIN Minuten ohne Eingabe
   --leerlauf-sekunden SEK   dasselbe in Sekunden (für Prüfungen)
+                      Gesperrt schaltet der Leerlaufdienst die Bildschirme
+                      nach 2 min ohne Eingabe ab; ~/.config/querencia/
+                      sitzung.ini mit [Sperre] BildschirmAus=SEK|Nmin, 0 = nie.
   --version, --hilfe
 
 Optionen:

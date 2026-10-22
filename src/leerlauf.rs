@@ -19,6 +19,15 @@
 //!
 //! Seit 0.1.5 schaltet der Dienst außerdem den Dunkelmodus für fremde
 //! GTK-3-Programme mit (`mitschalten.rs`).
+//!
+//! Seit 0.1.6 schaltet er die Ausgänge ab, wenn die Sitzung gesperrt ist
+//! und `BildschirmAus` (Vorgabe 120 s, `sitzung.ini`, 0 = nie) lang keine
+//! Eingabe kam (`bildschirm.rs`). Dafür legt er mit der Sperre eine zweite
+//! Leerlauf-Benachrichtigung an; ihr `resumed` (Eingabe) schaltet die
+//! Ausgänge wieder an, ebenso das Entsperren. Gilt eine Hemmung über
+//! `org.freedesktop.ScreenSaver` (Video), bleiben die Ausgänge an; eine
+//! Wayland-Hemmung (idle-inhibit) hält labwc selbst gegen beide
+//! Benachrichtigungen.
 
 use std::cell::RefCell;
 use std::io::ErrorKind;
@@ -33,20 +42,34 @@ use gtk::gio;
 use gtk::glib;
 use wayland_client::backend::WaylandError;
 use wayland_client::globals::{GlobalListContents, registry_queue_init};
-use wayland_client::protocol::{wl_registry, wl_seat};
+use wayland_client::protocol::{wl_output, wl_registry, wl_seat};
 use wayland_client::{Connection, Dispatch, QueueHandle, delegate_noop};
 use wayland_protocols::ext::idle_notify::v1::client::{
     ext_idle_notification_v1, ext_idle_notifier_v1,
 };
+use wayland_protocols_wlr::output_power_management::v1::client::{
+    zwlr_output_power_manager_v1, zwlr_output_power_v1,
+};
 
 use crate::aktion::{eigenes_programm, protokoll};
 use crate::aufraeumen;
+use crate::bildschirm::{self, Leistung};
+use crate::einstellung;
 use crate::schoner::{self, Hemmungen};
 
 /// Alle so viele Sekunden sieht der Dienst nach, ob ein Sperrbildschirm
 /// läuft, den er nicht selbst gestartet hat (Tastenkürzel), für
 /// `ActiveChanged`.
 const FREMDE_SPERRE_PRUEFEN_S: u32 = 5;
+
+/// Wofür eine Leerlauf-Benachrichtigung da ist.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Art {
+    /// Leerlauf → Sperre
+    Sperre,
+    /// gesperrt und Leerlauf → Bildschirm aus (0.1.6)
+    Bildschirm,
+}
 
 /// Die Leerlauf-Benachrichtigung am Compositor; neu angelegt zählt sie den
 /// Leerlauf von vorn.
@@ -64,7 +87,20 @@ impl Melder {
         self.benachrichtigung.destroy();
         self.benachrichtigung =
             self.notifier
-                .get_idle_notification(self.ms, &self.seat, &self.qh, ());
+                .get_idle_notification(self.ms, &self.seat, &self.qh, Art::Sperre);
+        self.flush();
+    }
+
+    /// Eine weitere Benachrichtigung nach `ms` ohne Eingabe.
+    fn bildschirm(&self, ms: u32) -> ext_idle_notification_v1::ExtIdleNotificationV1 {
+        let b = self
+            .notifier
+            .get_idle_notification(ms, &self.seat, &self.qh, Art::Bildschirm);
+        self.flush();
+        b
+    }
+
+    fn flush(&self) {
         if let Err(e) = self.conn.flush() {
             protokoll(&format!("Leerlauf: Wayland-Flush: {e}"));
         }
@@ -84,6 +120,12 @@ struct Leerlauf {
     /// Zuletzt gemeldeter Sperrzustand und seit wann.
     gesperrt_gemeldet: bool,
     gesperrt_ab: Option<Instant>,
+    /// Ausgänge und ihre Leistungssteuerung (0.1.6).
+    leistung: Leistung,
+    /// Bildschirm aus nach so vielen ms gesperrt ohne Eingabe; 0 = nie.
+    aus_nach_ms: u32,
+    /// Läuft, solange gesperrt ist und `aus_nach_ms` > 0.
+    bildschirm_melder: Option<ext_idle_notification_v1::ExtIdleNotificationV1>,
 }
 
 impl Leerlauf {
@@ -96,6 +138,9 @@ impl Leerlauf {
             bus: None,
             gesperrt_gemeldet: false,
             gesperrt_ab: None,
+            leistung: Leistung::neu(None),
+            aus_nach_ms: 0,
+            bildschirm_melder: None,
         }
     }
 
@@ -133,8 +178,77 @@ impl Leerlauf {
             if let Some(bus) = &self.bus {
                 schoner::aktiv_melden(bus, jetzt);
             }
+            if jetzt {
+                self.bildschirm_zaehlen("gesperrt");
+            } else {
+                self.bildschirm_ende("entsperrt");
+            }
         }
         jetzt
+    }
+
+    /// Zählt „Bildschirm aus“ von vorn (neue Benachrichtigung), wenn
+    /// gesperrt ist und die Ausgänge abschaltbar sind.
+    fn bildschirm_zaehlen(&mut self, warum: &str) {
+        if let Some(alt) = self.bildschirm_melder.take() {
+            alt.destroy();
+        }
+        if self.aus_nach_ms == 0 || !self.leistung.verfuegbar() {
+            return;
+        }
+        if let Some(m) = &self.melder {
+            self.bildschirm_melder = Some(m.bildschirm(self.aus_nach_ms));
+            protokoll(&format!(
+                "Bildschirm: aus nach {} s ohne Eingabe ({warum})",
+                self.aus_nach_ms / 1000
+            ));
+        }
+    }
+
+    /// Nach dem Entsperren: keine Abschaltung mehr, Ausgänge an.
+    fn bildschirm_ende(&mut self, warum: &str) {
+        if let Some(alt) = self.bildschirm_melder.take() {
+            alt.destroy();
+            if let Some(m) = &self.melder {
+                m.flush();
+            }
+        }
+        self.bildschirm_an(warum);
+    }
+
+    fn bildschirm_an(&mut self, warum: &str) {
+        if self.leistung.einschalten() {
+            if let Some(m) = &self.melder {
+                m.flush();
+            }
+            protokoll(&format!("Bildschirm: Ausgänge an ({warum})"));
+        }
+    }
+
+    /// Ausgänge aus, wenn noch gesperrt und nichts hemmt.
+    fn bildschirm_aus(&mut self) {
+        if !self.irgendeine_sperre() {
+            return;
+        }
+        if self.hemmungen.aktiv() {
+            protokoll(&format!(
+                "Bildschirm bleibt an: {} Hemmung(en): {}",
+                self.hemmungen.anzahl(),
+                self.hemmungen.beschreibung()
+            ));
+            return;
+        }
+        let Some(m) = &self.melder else {
+            return;
+        };
+        let qh = m.qh.clone();
+        if self.leistung.ausschalten(&qh) {
+            m.flush();
+            protokoll(&format!(
+                "Bildschirm: {} Ausgang/Ausgänge aus (gesperrt, keine Eingabe)",
+                self.leistung.anzahl()
+            ));
+        }
     }
 
     /// Startet den Sperrbildschirm, wenn keiner läuft; `anlass` fürs
@@ -188,11 +302,15 @@ impl schoner::Sitzung for Leerlauf {
         if erste {
             protokoll("Leerlaufsperre gehemmt");
         }
+        self.bildschirm_an("Hemmung");
     }
 
     fn frei(&mut self) {
         protokoll("keine Hemmung mehr");
         self.neu_zaehlen("letzte Hemmung aufgehoben");
+        if self.gesperrt_gemeldet {
+            self.bildschirm_zaehlen("letzte Hemmung aufgehoben");
+        }
     }
 
     fn sperren(&mut self, anlass: &str) -> bool {
@@ -212,6 +330,9 @@ impl schoner::Sitzung for Leerlauf {
     fn aktivitaet(&mut self) {
         if !self.irgendeine_sperre() {
             self.neu_zaehlen("SimulateUserActivity");
+        } else if self.gesperrt_gemeldet {
+            self.bildschirm_an("SimulateUserActivity");
+            self.bildschirm_zaehlen("SimulateUserActivity");
         }
     }
 
@@ -287,15 +408,23 @@ fn ernten(mut kind: Child, nachher: impl FnOnce() + Send + 'static) -> Arc<Atomi
     laeuft
 }
 
-impl Dispatch<ext_idle_notification_v1::ExtIdleNotificationV1, ()> for Leerlauf {
+impl Dispatch<ext_idle_notification_v1::ExtIdleNotificationV1, Art> for Leerlauf {
     fn event(
         state: &mut Self,
         _: &ext_idle_notification_v1::ExtIdleNotificationV1,
         event: ext_idle_notification_v1::Event,
-        _: &(),
+        art: &Art,
         _: &Connection,
         _: &QueueHandle<Self>,
     ) {
+        if *art == Art::Bildschirm {
+            match event {
+                ext_idle_notification_v1::Event::Idled => state.bildschirm_aus(),
+                ext_idle_notification_v1::Event::Resumed => state.bildschirm_an("Eingabe"),
+                _ => {}
+            }
+            return;
+        }
         match event {
             ext_idle_notification_v1::Event::Idled => {
                 protokoll("Leerlauf erreicht");
@@ -318,20 +447,48 @@ impl Dispatch<ext_idle_notification_v1::ExtIdleNotificationV1, ()> for Leerlauf 
     }
 }
 
+/// Ausgänge kommen und gehen (Anstecken, Abschalten durch labwc).
 impl Dispatch<wl_registry::WlRegistry, GlobalListContents> for Leerlauf {
     fn event(
-        _: &mut Self,
-        _: &wl_registry::WlRegistry,
-        _: wl_registry::Event,
+        state: &mut Self,
+        registry: &wl_registry::WlRegistry,
+        event: wl_registry::Event,
         _: &GlobalListContents,
         _: &Connection,
+        qh: &QueueHandle<Self>,
+    ) {
+        match event {
+            wl_registry::Event::Global {
+                name,
+                interface,
+                version,
+            } if interface == "wl_output" => {
+                let a = registry.bind::<wl_output::WlOutput, _, _>(name, version.min(4), qh, ());
+                state.leistung.ausgang_dazu(name, a);
+            }
+            wl_registry::Event::GlobalRemove { name } => state.leistung.ausgang_weg(name),
+            _ => {}
+        }
+    }
+}
+
+impl Dispatch<zwlr_output_power_v1::ZwlrOutputPowerV1, ()> for Leerlauf {
+    fn event(
+        _: &mut Self,
+        _: &zwlr_output_power_v1::ZwlrOutputPowerV1,
+        event: zwlr_output_power_v1::Event,
+        _: &(),
+        conn: &Connection,
         _: &QueueHandle<Self>,
     ) {
+        bildschirm::ereignis(event, conn);
     }
 }
 
 delegate_noop!(Leerlauf: ignore wl_seat::WlSeat);
+delegate_noop!(Leerlauf: ignore wl_output::WlOutput);
 delegate_noop!(Leerlauf: ignore ext_idle_notifier_v1::ExtIdleNotifierV1);
+delegate_noop!(Leerlauf: ignore zwlr_output_power_manager_v1::ZwlrOutputPowerManagerV1);
 
 /// Läuft bis zum Ende der Wayland-Verbindung; Exit 2 ohne Protokoll.
 pub fn ausfuehren(sekunden: u32) -> i32 {
@@ -376,18 +533,51 @@ fn dienst(sekunden: u32) -> Result<(), String> {
         .bind(&qh, 1..=1, ())
         .map_err(|_| "der Compositor bietet ext-idle-notify-v1 nicht an".to_string())?;
     let ms = sekunden.saturating_mul(1000);
-    let benachrichtigung = notifier.get_idle_notification(ms, &seat, &qh, ());
+    let benachrichtigung = notifier.get_idle_notification(ms, &seat, &qh, Art::Sperre);
     protokoll(&format!(
         "Leerlaufdienst: sperrt nach {sekunden} s ohne Eingabe"
     ));
-    let zustand = Rc::new(RefCell::new(Leerlauf::neu(Some(Melder {
+    // Bildschirm aus nach der Sperre (0.1.6): Ausgänge und Leistungssteuerung.
+    let manager: Option<zwlr_output_power_manager_v1::ZwlrOutputPowerManagerV1> =
+        globals.bind(&qh, 1..=1, ()).ok();
+    let mut leistung = Leistung::neu(manager);
+    for g in globals.contents().clone_list() {
+        if g.interface == "wl_output" {
+            let a = globals.registry().bind::<wl_output::WlOutput, _, _>(
+                g.name,
+                g.version.min(4),
+                &qh,
+                (),
+            );
+            leistung.ausgang_dazu(g.name, a);
+        }
+    }
+    let (aus_s, herkunft) = einstellung::bildschirm_aus();
+    if !leistung.verfuegbar() {
+        protokoll(
+            "Bildschirm: der Compositor bietet wlr-output-power-management nicht an, Ausgänge bleiben an",
+        );
+    } else if aus_s == 0 {
+        protokoll(&format!(
+            "Bildschirm: bleibt nach der Sperre an ({herkunft})"
+        ));
+    } else {
+        protokoll(&format!(
+            "Bildschirm: aus nach {aus_s} s gesperrt ohne Eingabe ({herkunft}; {} Ausgang/Ausgänge)",
+            leistung.anzahl()
+        ));
+    }
+    let mut leerlauf = Leerlauf::neu(Some(Melder {
         conn: conn.clone(),
         qh,
         notifier,
         seat,
         ms,
         benachrichtigung,
-    }))));
+    }));
+    leerlauf.leistung = leistung;
+    leerlauf.aus_nach_ms = aus_s.saturating_mul(1000);
+    let zustand = Rc::new(RefCell::new(leerlauf));
     let bus = schoner::anbieten(zustand.clone());
     zustand.borrow_mut().bus = bus;
     DIENST.with(|d| *d.borrow_mut() = Rc::downgrade(&zustand));

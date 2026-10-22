@@ -1,6 +1,6 @@
 [package]
 name = "querencia-sitzung"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 rust-version = "1.92"
 description = "Querencia Sitzung: Abmelden, Bildschirm sperren, Neu starten, Herunterfahren und Leerlaufsperre für Querencia Desktop"
@@ -15,6 +15,8 @@ gtk = { package = "gtk4", version = "0.11", features = ["v4_12"] }
 # (ext-session-lock-v1, ext-idle-notify-v1), ohne GTK.
 wayland-client = "0.31"
 wayland-protocols = { version = "0.32", features = ["client", "staging"] }
+# Bildschirm aus nach der Sperre (0.1.6): wlr-output-power-management.
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
 xkbcommon = "0.8"
 cairo-rs = { version = "0.22", features = ["png"] }
 pango = "0.22"

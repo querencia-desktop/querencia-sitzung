@@ -5,10 +5,12 @@
 //! Aktionen: `aktion.rs`; Sperrbildschirm: `sperre.rs` (ext-session-lock);
 //! Leerlauf: `leerlauf.rs` (ext-idle-notify) mit dem Dienst
 //! `org.freedesktop.ScreenSaver` (`schoner.rs`) und dem Dunkelmodus für
-//! fremde GTK-3-Programme (`mitschalten.rs`); Passwort: `pam.rs`.
+//! fremde GTK-3-Programme (`mitschalten.rs`) und „Bildschirm aus“ nach der
+//! Sperre (`bildschirm.rs`); Passwort: `pam.rs`.
 
 mod aktion;
 mod aufraeumen;
+mod bildschirm;
 mod cli;
 mod dialog;
 mod einstellung;

@@ -37,6 +37,7 @@ querencia-sitzung --version | --hilfe
 | Sperrbildschirm | ext-session-lock-v1 direkt über wayland-client (kein GTK), Cairo/Pango, eine Fläche je Ausgang, Uhr, Passwortfeld | `src/sperre.rs` |
 | Passwort | PAM über `dlopen("libpam.so.0")` (keine PAM-Entwicklungsdateien auf der VM), Dienst `querencia-sitzung` falls in `/etc/pam.d`, sonst `login` | `src/pam.rs` |
 | Leerlauf | ext-idle-notify-v1, startet `--sperren --sofort`; bietet `org.freedesktop.ScreenSaver` an (Inhibit hält die Sperre an, Lock, GetActive, ActiveChanged), GLib-Hauptschleife | `src/leerlauf.rs`, `src/schoner.rs` |
+| Bildschirm aus | gesperrt und `BildschirmAus` (Vorgabe 120 s, `sitzung.ini` `[Sperre]`, 0 = nie) ohne Eingabe: Ausgänge aus über wlr-output-power-management, Eingabe oder Entsperren schaltet an; ScreenSaver-Hemmung hält an | `src/bildschirm.rs`, `src/leerlauf.rs` |
 | Dunkelmodus | Farben nur aus dem GTK-Thema; Einstellung `gtk-interface-color-scheme` nach dem Start neu melden (GTK-4.22-Startfehler) | `src/farbschema.rs` |
 | Dunkelmodus für GTK 3 | Leerlaufdienst schaltet bei `dunkel_aktiv` fremde GTK-3-Programme mit (verwalteter Block in `~/.config/gtk-3.0/settings.ini`, wirkt beim nächsten Programmstart); fremde Zeilen bleiben; labwc-Rahmen nicht (Sache von Thema und Einstellungen) | `src/mitschalten.rs` |
 

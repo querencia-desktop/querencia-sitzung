@@ -175,3 +175,25 @@ QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-fremd-dunkel.sh 1 240  # 
   ist sie danach weg; fremder Inhalt ist byte-gleich zur Sicherung von
   `aktivieren`; Fehler rollen auch die Datei zurück; Verweis und
   beschädigter Block bleiben unberührt.
+
+## Bildschirm aus nach der Sperre (0.1.6)
+
+```bash
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-bildschirm.sh 1 300   # B01–B15, ca. 2 min
+```
+
+- Wegwerf-Bus wie beim ScreenSaver-Szenario; das Szenario bricht ab, wenn
+  der Bus unter `/run/user/` liegt.
+- `sitzung.ini` des Profils mit `[Sperre]` `BildschirmAus=4`; der
+  Leerlaufdienst sperrt selbst erst nach 300 s, gesperrt wird über
+  `org.freedesktop.ScreenSaver.Lock` bzw. wie vom Tastenkürzel.
+- Ob der Ausgang an ist, misst `grim -o HEADLESS-1`: Ein abgeschalteter
+  Ausgang lässt sich nicht fotografieren. labwc bestätigt den Wechsel an
+  die Steuerung des Dienstes („Ausgang meldet aus“). wlr-output-management
+  meldet ihn nicht: labwc schickt dabei kein neues `enabled` (gemessen).
+- Fälle: aus nach 4 s, Eingabe → an (Sperrbildschirm sichtbar), wieder
+  aus, Entsperren, entsperrt nie aus, Hemmung hält an, UnInhibit zählt von
+  vorn, neue Hemmung → an, SimulateUserActivity, Sperre vom Tastenkürzel,
+  `BildschirmAus=0`, Vorgabe 120 s ohne Datei.
+- NOT TESTED: Wayland-Hemmung (idle-inhibit) eines Videoprogramms, echte
+  Monitore (DPMS) statt headless.

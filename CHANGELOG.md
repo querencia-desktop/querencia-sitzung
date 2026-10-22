@@ -1,5 +1,27 @@
 # Änderungen
 
+## 0.1.6 – 2026-10-22
+
+Bildschirm aus nach der Sperre:
+
+- Ist die Sitzung gesperrt und kommt `BildschirmAus` lang keine Eingabe,
+  schaltet der Leerlaufdienst alle Ausgänge über
+  wlr-output-power-management ab (labwc 0.9.8 bietet
+  `zwlr_output_power_manager_v1`). Eine Eingabe (Maus, Taste) schaltet sie
+  sofort wieder an, ebenso das Entsperren. Ohne weitere Eingabe gehen sie
+  nach derselben Zeit wieder aus.
+- Einstellung in `~/.config/querencia/sitzung.ini`: `[Sperre]`
+  `BildschirmAus=` in Sekunden (`120`, `120s`) oder Minuten (`2min`);
+  `0` = nie. Ohne Eintrag gelten 120 s.
+- Gilt eine Hemmung über `org.freedesktop.ScreenSaver` (Video), bleiben die
+  Ausgänge an; eine neue Hemmung schaltet sie an, fällt die letzte weg,
+  zählt die Zeit von vorn. `SimulateUserActivity` schaltet sie ebenfalls
+  an. Wayland-Hemmungen (idle-inhibit) wertet labwc selbst aus.
+- Auch eine Sperre vom Tastenkürzel zählt; der Dienst bemerkt sie nach
+  höchstens 5 s.
+- Neue Abhängigkeit `wayland-protocols-wlr` 0.3 (MIT).
+- Prüfwerkzeug: `szenario-bildschirm.sh` (B01–B15).
+
 ## 0.1.5 – 2026-10-22
 
 Dunkelmodus für fremde GTK-3-Programme (QD-103):
