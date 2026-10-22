@@ -21,3 +21,7 @@ __pycache__/
 /integration/vorschlag-015/querencia-sitzung
 /integration/vorschlag-015/querencia-polkit-agent
 /integration/vorschlag-015/share/
+# Vorlage der Integration 0.1.6: Binaries und Katalog nicht ins Repo
+/integration/vorschlag-016/querencia-sitzung
+/integration/vorschlag-016/querencia-polkit-agent
+/integration/vorschlag-016/share/

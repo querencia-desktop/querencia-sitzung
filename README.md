@@ -12,9 +12,9 @@ Neu starten, Herunterfahren und Leerlaufsperre, dazu der polkit-Agent
 
 | | |
 |---|---|
-| Version | 0.1.5 (Tags `sitzung/0.1.5`, `sitzung/0.1.5-int`): fremde GTK-3-Programme folgen dem Dunkelmodus (QD-103); davor 0.1.4: Dienst `org.freedesktop.ScreenSaver` (QD-104), Dialoge im Dunkelmodus (QD-109) |
-| Auf der Entwicklungs-VM | 0.1.4 live seit 22.10.2026 (Leerlaufdienst seit 19:35); 0.1.5 wartet auf Freigabe |
-| Letzte Prüfung | 22.10.2026 (0.1.5): fmt, Clippy, 65 + 10 Unit-Tests; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Countdown 9/9, Abmelden 10/10, Sprache Deutsch und Englisch je 7/7, ScreenSaver-Dienst 15/15, Dunkelmodus 8/8, fremde GTK-3-Programme 22/22, Messung GTK 3 m1–m10 |
+| Version | 0.1.6 (Tags `sitzung/0.1.6`, `sitzung/0.1.6-int`): Bildschirm aus nach der Sperre; davor 0.1.5: fremde GTK-3-Programme folgen dem Dunkelmodus (QD-103) |
+| Auf der Entwicklungs-VM | 0.1.5 aktiviert am 22.10.2026 21:10 (Dienst ab der nächsten Anmeldung); 0.1.6 wartet auf Freigabe |
+| Letzte Prüfung | 22.10.2026 (0.1.6): fmt, Clippy, 67 + 10 Unit-Tests; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Countdown 9/9, Abmelden 10/10, Sprache Deutsch und Englisch je 7/7, ScreenSaver-Dienst 15/15, Dunkelmodus 8/8, fremde GTK-3-Programme 22/22, Bildschirm aus 18/18 |
 | Getestet auf | Ubuntu 26.04, labwc 0.9.8, GTK 4.22 |
 
 Änderungen je Version: [CHANGELOG.md](CHANGELOG.md).
