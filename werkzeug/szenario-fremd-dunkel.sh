@@ -3,9 +3,11 @@
 # Leerlaufdienst (`--leerlauf 600`) läuft im isolierten labwc; das
 # Farbschema kommt wie live über gsettings und das Settings-Portal
 # (portal-ersatz.py, gui-pruefung.sh setzt QS_PORTAL=1). Fremde Zeilen in
-# settings.ini müssen byte-gleich bleiben. Die labwc-Rahmen schaltet die
-# Sitzung nicht (Entscheidung der Startsession): themerc-override bleibt
-# unberührt, labwc bekommt kein SIGHUP, die Titelleiste bleibt hell.
+# settings.ini müssen byte-gleich bleiben; ein eigener
+# gtk-application-prefer-dark-theme des Benutzers gilt (F15). Die
+# labwc-Rahmen schaltet die Sitzung nicht (Entscheidung der Startsession):
+# themerc-override bleibt unberührt, labwc bekommt kein SIGHUP, die
+# Titelleiste bleibt hell.
 # Fotos: werkzeug/gtk3-fenster.py (grundfarbe.py) und ein foot-Fenster mit
 # Serverdekoration (rahmenfarbe.py).
 . "$(dirname "$0")/gemeinsam.sh"
@@ -29,7 +31,7 @@ python3 -I "$W/portal-ersatz.py" "$QS_PROFILE/logs/portal-bereit" >>"$OUT/fd-por
 for ((i = 0; i < 50; i++)); do [ -f "$QS_PROFILE/logs/portal-bereit" ] && break; sleep 0.1; done
 
 # fremde Dateien mit eigenen Zeilen
-printf '[Settings]\ngtk-font-name=DejaVu Sans 11\ngtk-application-prefer-dark-theme=false\n' >"$INI"
+printf '[Settings]\ngtk-font-name=DejaVu Sans 11\n\n[Andere]\nx=1\n' >"$INI"
 printf '# eigene Zeile des Benutzers\nwindow.button.spacing: 2\n' >"$TRC"
 cp "$INI" "$QS_PROFILE/ini-fremd"; cp "$TRC" "$QS_PROFILE/trc-fremd"
 labwc_stand() { stat -c %Y "$TRC"; ls "$XDG_CONFIG_HOME/labwc"; }
@@ -81,6 +83,18 @@ cmp -s "$INI" "$QS_PROFILE/ini-fremd" && grep -q 'Thema Ohne-Dunkel.*dunkel_akti
 gsettings set org.gnome.desktop.interface gtk-theme Querencia-Klassisch; sleep 1.5
 block_da "$INI" "$QS_PROFILE/ini-fremd" && ok "F08b Themenwechsel zurück auf Querencia-Klassisch bei prefer-dark: Block gesetzt" || nok "F08b"
 dienst_ende
+
+# F15: eigener Eintrag des Benutzers in [Settings] gilt, kein Block
+printf '[Settings]\ngtk-application-prefer-dark-theme=false\n' >"$INI"; cp "$INI" "$QS_PROFILE/ini-eigen"
+dienst_start
+cmp -s "$INI" "$QS_PROFILE/ini-eigen" && grep -q 'setzt gtk-application-prefer-dark-theme selbst, der Eintrag des Benutzers gilt' "$DLOG" &&
+    ok "F15 eigener Eintrag prefer-dark=false bei dunkel: kein Block, Datei byte-gleich, protokolliert" || nok "F15 $(tr '\n' '|' <"$INI") $(tail -2 "$DLOG" | tr '\n' ';')"
+foto_gtk3 gtk3-eigen
+soll fd-gtk3-eigen hell "F15b GTK-3-Fenster folgt dem Eintrag des Benutzers: hell (Bild fd-gtk3-eigen)" "$GF" "400 120"
+schema default
+cmp -s "$INI" "$QS_PROFILE/ini-eigen" && ok "F15c zurück auf hell: Datei mit eigenem Eintrag byte-gleich" || nok "F15c"
+dienst_ende
+schema prefer-dark
 
 # F09: Start bei dunklem Schema, Datei nur mit unserem Block
 rm -f "$INI"

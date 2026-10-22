@@ -17,7 +17,9 @@
 //! gekennzeichneten Block zwischen [`ANFANG`] und [`ENDE`]; fremde Zeilen
 //! bleiben byte-gleich. Bei „hell“ fällt der Block weg, eine Datei, die nur
 //! noch aus ihm bestand, wird entfernt. Verweise (Symlinks) und Dateien mit
-//! beschädigtem Block bleiben unberührt.
+//! beschädigtem Block bleiben unberührt. Setzt der Benutzer
+//! `gtk-application-prefer-dark-theme` in `[Settings]` selbst, gilt sein
+//! Eintrag, und die Sitzung schreibt keinen Block.
 //!
 //! Die labwc-Fensterrahmen schaltet die Sitzung nicht: Ein dunkles
 //! labwc-Thema wählen die Einstellungen in `rc.xml` (Entscheidung der
@@ -80,6 +82,31 @@ pub fn block_einsetzen(text: &str, block: Option<&str>) -> Result<String, String
         aus.push('\n');
     }
     Ok(aus)
+}
+
+/// Schlüssel, den der Block setzt.
+pub const SCHLUESSEL: &str = "gtk-application-prefer-dark-theme";
+
+/// Setzt `text` (ohne verwalteten Block) [`SCHLUESSEL`] selbst im Abschnitt
+/// `[Settings]`? Dann gilt der Eintrag des Benutzers, und die Sitzung
+/// schreibt keinen Block (kein zweiter Eintrag, der ihn überstimmt).
+pub fn eigener_eintrag(text: &str) -> bool {
+    let mut abschnitt = "";
+    for zeile in text.lines() {
+        let z = zeile.trim();
+        if z.starts_with('#') || z.is_empty() {
+            continue;
+        }
+        if let Some(name) = z.strip_prefix('[').and_then(|z| z.strip_suffix(']')) {
+            abschnitt = name.trim();
+        } else if abschnitt == "Settings"
+            && z.split_once('=')
+                .is_some_and(|(k, _)| k.trim() == SCHLUESSEL)
+        {
+            return true;
+        }
+    }
+    false
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -232,10 +259,20 @@ fn anwenden(s: &gio::Settings, anlass: &str) {
         lage.thema_gtk4_dunkel, lage.thema_gtk3_dunkel, soll.dunkel_aktiv
     ));
     let ini = config_home().join("gtk-3.0").join("settings.ini");
+    let eigen = std::fs::read_to_string(&ini)
+        .ok()
+        .and_then(|t| block_einsetzen(&t, None).ok())
+        .is_some_and(|t| eigener_eintrag(&t));
+    if soll.gtk3 && eigen {
+        protokoll(&format!(
+            "Dunkelmodus: GTK 3: {} setzt {SCHLUESSEL} selbst, der Eintrag des Benutzers gilt (kein Block)",
+            ini.display()
+        ));
+    }
     melden(
         "GTK 3",
         &ini,
-        datei_abgleichen(&ini, soll.gtk3.then_some(GTK3_BLOCK)),
+        datei_abgleichen(&ini, (soll.gtk3 && !eigen).then_some(GTK3_BLOCK)),
     );
 }
 
@@ -357,6 +394,31 @@ mod tests {
         assert!(datei_abgleichen(&p, Some(GTK3_BLOCK)).is_err());
         assert_eq!(std::fs::read_to_string(&ziel).unwrap(), "[Settings]\n");
         std::fs::remove_dir_all(&d).unwrap();
+    }
+
+    #[test]
+    fn eintrag_des_benutzers_wird_erkannt() {
+        assert!(!eigener_eintrag(""));
+        assert!(!eigener_eintrag("[Settings]\ngtk-font-name=X 9\n"));
+        assert!(eigener_eintrag(
+            "[Settings]\ngtk-application-prefer-dark-theme=false\n"
+        ));
+        assert!(eigener_eintrag(
+            "[Settings]\n gtk-application-prefer-dark-theme = 1\n"
+        ));
+        // auskommentiert oder in einem anderen Abschnitt zählt nicht
+        assert!(!eigener_eintrag(
+            "[Settings]\n#gtk-application-prefer-dark-theme=1\n"
+        ));
+        assert!(!eigener_eintrag(
+            "[Andere]\ngtk-application-prefer-dark-theme=1\n"
+        ));
+        assert!(eigener_eintrag(
+            "[Andere]\nx=1\n[Settings]\ngtk-application-prefer-dark-theme=1\n"
+        ));
+        // der eigene Block zählt nicht, er wird vorher herausgenommen
+        let mit = block_einsetzen("[Settings]\n", Some(GTK3_BLOCK)).unwrap();
+        assert!(!eigener_eintrag(&block_einsetzen(&mit, None).unwrap()));
     }
 
     #[test]

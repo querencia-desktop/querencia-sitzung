@@ -168,4 +168,10 @@ QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-fremd-dunkel.sh 1 240  # 
     Protokoll nennt kein SIGHUP, die Titelleiste bleibt bei dunkel hell
     (`rahmenfarbe.py`).
   - Weitere Fälle: Thema ohne Dunkelfassung, Start bei dunkel, Datei nur
-    mit Block, Verweis, beschädigter Block, ScreenSaver antwortet weiter.
+    mit Block, Verweis, beschädigter Block, ScreenSaver antwortet weiter,
+    eigener Eintrag des Benutzers gilt (F15).
+- **Integration:** `probe-015.sh` prüft zusätzlich (7a–7g), dass `zurueck`
+  genau den verwalteten Block aus `settings.ini` nimmt: Fehlte die Datei,
+  ist sie danach weg; fremder Inhalt ist byte-gleich zur Sicherung von
+  `aktivieren`; Fehler rollen auch die Datei zurück; Verweis und
+  beschädigter Block bleiben unberührt.

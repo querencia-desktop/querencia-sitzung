@@ -21,6 +21,9 @@ Dunkelmodus für fremde GTK-3-Programme (QD-103):
   eine Datei, die nur aus dem Block bestand, wird entfernt. Verweise
   (Symlinks) und Dateien mit beschädigtem Block bleiben unberührt, das
   Protokoll nennt sie.
+- Setzt der Benutzer `gtk-application-prefer-dark-theme` in `[Settings]`
+  selbst, gilt sein Eintrag: Die Sitzung schreibt dann keinen Block (kein
+  zweiter Eintrag, der ihn überstimmt) und nennt das im Protokoll.
 - Die labwc-Fensterrahmen schaltet die Sitzung nicht. Ein Entwurf mit
   `themerc-override` ist wieder ausgebaut (Entscheidung der Startsession,
   22.10.2026): Er konnte die Titelknöpfe (PNG des Themas) nicht tauschen.
