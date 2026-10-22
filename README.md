@@ -31,7 +31,7 @@ querencia-sitzung --version | --hilfe
 
 | Teil | Technik | Datei |
 |---|---|---|
-| Rückfragen, Gesamtdialog | GTK 4, GNOME-2-Aufbau, labwc-Rahmen; Esc, Pfeile, Enter, Mnemoniken; seit 0.1.3 ohne Countdown (nur auf Wunsch: `--countdown SEK` oder `sitzung.ini` `[Dialog]` `Countdown=an`) | `src/dialog.rs` |
+| Rückfragen, Gesamtdialog | GTK 4, GNOME-2-Aufbau, labwc-Rahmen; Esc, Pfeile, Enter, Mnemoniken; „Herunterfahren“ bietet seit 0.1.7 auch „Neu starten“ an; seit 0.1.3 ohne Countdown (nur auf Wunsch: `--countdown SEK` oder `sitzung.ini` `[Dialog]` `Countdown=an`) | `src/dialog.rs` |
 | Abmelden | `<labwc> --exit` mit dem labwc aus `/proc/$LABWC_PID/exe` (wie das Panel) | `src/aktion.rs` |
 | Neu starten, Herunterfahren | systemd-logind D-Bus `CanReboot`/`CanPowerOff`, dann `Reboot`/`PowerOff` (interactive=true, polkit darf fragen) | `src/aktion.rs` |
 | Sperrbildschirm | ext-session-lock-v1 direkt über wayland-client (kein GTK), Cairo/Pango, eine Fläche je Ausgang, Uhr, Passwortfeld | `src/sperre.rs` |

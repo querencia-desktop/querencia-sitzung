@@ -35,6 +35,11 @@ pub fn knopf_text(aktion: Aktion) -> (String, &'static [&'static str]) {
     }
 }
 
+/// Beschriftung von „Abbrechen“ (mit Mnemonik, übersetzt).
+pub fn abbrechen_text() -> String {
+    gettext("_Cancel")
+}
+
 /// Fenstertitel einer Aktion (übersetzt), auch für Fehlermeldungen.
 pub fn titel(aktion: Aktion) -> String {
     match aktion {
@@ -71,9 +76,10 @@ pub fn texte(aktion: Aktion) -> (String, String, String) {
             gettext("Restart this system now?"),
             alle_beendet(),
         ),
+        // Der Dialog bietet auch „Neu starten“ an (0.1.7, wie GNOME 2).
         Aktion::Herunterfahren => (
             titel(aktion),
-            gettext("Shut down this system now?"),
+            gettext("Shut down or restart this system now?"),
             alle_beendet(),
         ),
     }
@@ -190,8 +196,21 @@ pub struct Aufbau {
     pub symbol: &'static [&'static str],
     /// Schaltflächen von links nach rechts; `None` = Abbrechen.
     pub knoepfe: Vec<Option<Aktion>>,
+    /// Vorgabeknopf (GTK-Standardwidget, wie die Vorgabeantwort in
+    /// gnome-session 2.30); den Fokus behält „Abbrechen“.
+    pub vorgabe: Aktion,
     /// Aktion und Sekunden des Countdowns.
     pub countdown: Option<(Aktion, u32)>,
+}
+
+/// Schaltflächen einer Rückfrage von links nach rechts: „Abbrechen“, dann
+/// die Aktion. Der Dialog „Herunterfahren“ bietet wie in GNOME 2 auch
+/// „Neu starten“ an (0.1.7); Herunterfahren bleibt rechts.
+pub fn rueckfrage_knoepfe(aktion: Aktion) -> Vec<Option<Aktion>> {
+    match aktion {
+        Aktion::Herunterfahren => vec![None, Some(Aktion::Neustart), Some(aktion)],
+        _ => vec![None, Some(aktion)],
+    }
 }
 
 /// [`Aufbau`] für einen Befehl (nur Dialoge).
@@ -213,6 +232,7 @@ pub fn aufbau(befehl: &Befehl) -> Option<Aufbau> {
                 None,
                 Some(Aktion::Abmelden),
             ],
+            vorgabe: Aktion::Abmelden,
             countdown: countdown.map(|s| (Aktion::Abmelden, s)),
         }),
         Befehl::Rueckfrage { aktion, countdown } => {
@@ -222,7 +242,8 @@ pub fn aufbau(befehl: &Befehl) -> Option<Aufbau> {
                 frage,
                 detail,
                 symbol: knopf_text(*aktion).1,
-                knoepfe: vec![None, Some(*aktion)],
+                knoepfe: rueckfrage_knoepfe(*aktion),
+                vorgabe: *aktion,
                 countdown: countdown.map(|s| (*aktion, s)),
             })
         }
@@ -304,6 +325,7 @@ fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>
     let knoepfe = gtk::Box::new(gtk::Orientation::Horizontal, 6);
     knoepfe.set_halign(gtk::Align::End);
     let mut abbrechen = None;
+    let mut vorgabe = None;
     for eintrag in &aufbau.knoepfe {
         let button = match eintrag {
             Some(aktion) => {
@@ -320,10 +342,13 @@ fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>
                         window.close();
                     }
                 ));
+                if aktion == aufbau.vorgabe {
+                    vorgabe = Some(b.clone());
+                }
                 b
             }
             None => {
-                let b = knopf(&gettext("_Cancel"), &["process-stop", "dialog-cancel"]);
+                let b = knopf(&abbrechen_text(), &["process-stop", "dialog-cancel"]);
                 b.connect_clicked(glib::clone!(
                     #[weak]
                     window,
@@ -365,6 +390,7 @@ fn fenster(app: &gtk::Application, aufbau: &Aufbau, wahl: Rc<Cell<Option<Aktion>
         }
     ));
     window.add_controller(tasten);
+    window.set_default_widget(vorgabe.as_ref());
     if let Some(abbrechen) = &abbrechen {
         GtkWindowExt::set_focus(&window, Some(abbrechen));
     }
@@ -550,6 +576,78 @@ mod tests {
         })
         .unwrap();
         assert_eq!(a.countdown, Some((Aktion::Abmelden, 60)));
+        assert_eq!(a.vorgabe, Aktion::Abmelden);
+    }
+
+    #[test]
+    fn herunterfahren_bietet_neu_starten_an() {
+        for countdown in [None, Some(60)] {
+            let a = aufbau(&Befehl::Rueckfrage {
+                aktion: Aktion::Herunterfahren,
+                countdown,
+            })
+            .unwrap();
+            assert_eq!(
+                a.knoepfe,
+                vec![None, Some(Aktion::Neustart), Some(Aktion::Herunterfahren)]
+            );
+            assert_eq!(a.vorgabe, Aktion::Herunterfahren);
+            assert_eq!(a.countdown, countdown.map(|s| (Aktion::Herunterfahren, s)));
+            // Ohne Katalog englisch (msgid), deutsch siehe po/de.po.
+            assert_eq!(a.frage, "Shut down or restart this system now?");
+            assert_eq!(a.titel, "Shut Down");
+        }
+    }
+
+    #[test]
+    fn andere_rueckfragen_nur_abbrechen_und_aktion() {
+        for aktion in [Aktion::Abmelden, Aktion::Sperren, Aktion::Neustart] {
+            assert_eq!(rueckfrage_knoepfe(aktion), vec![None, Some(aktion)]);
+        }
+    }
+
+    /// Buchstabe hinter dem `_` einer Beschriftung, klein.
+    fn zugriffstaste(text: &str) -> char {
+        let i = text.find('_').expect("Zugriffstaste") + 1;
+        text[i..]
+            .chars()
+            .next()
+            .unwrap()
+            .to_lowercase()
+            .next()
+            .unwrap()
+    }
+
+    /// `msgstr` zu `msgid` aus einer .po-Datei (nur einzeilige Einträge).
+    fn uebersetzung(po: &str, msgid: &str) -> String {
+        let kopf = format!("msgid \"{msgid}\"\nmsgstr \"");
+        let rest = &po[po.find(&kopf).expect("msgid in po") + kopf.len()..];
+        rest[..rest.find('"').unwrap()].to_string()
+    }
+
+    #[test]
+    fn zugriffstasten_im_dialog_herunterfahren_verschieden() {
+        let texte: Vec<String> = rueckfrage_knoepfe(Aktion::Herunterfahren)
+            .into_iter()
+            .map(|k| match k {
+                Some(a) => knopf_text(a).0,
+                None => abbrechen_text(),
+            })
+            .collect();
+        let de = include_str!("../po/de.po");
+        for sprache in ["en", "de"] {
+            let mut tasten: Vec<char> = texte
+                .iter()
+                .map(|t| match sprache {
+                    "de" => zugriffstaste(&uebersetzung(de, t)),
+                    _ => zugriffstaste(t),
+                })
+                .collect();
+            tasten.sort_unstable();
+            tasten.dedup();
+            assert_eq!(tasten.len(), 3, "{sprache}: {tasten:?}");
+        }
+        assert_eq!(uebersetzung(de, "_Restart"), "Neu s_tarten");
     }
 
     #[test]
@@ -565,7 +663,9 @@ mod tests {
                 countdown: Some(60),
             })
             .unwrap();
-            assert_eq!(a.knoepfe, vec![None, Some(aktion)]);
+            assert_eq!(a.knoepfe.first(), Some(&None), "Abbrechen links");
+            assert_eq!(a.knoepfe.last(), Some(&Some(aktion)), "Aktion rechts");
+            assert_eq!(a.vorgabe, aktion);
             assert_eq!(a.countdown, Some((aktion, 60)));
             assert_eq!(a.titel, titel(aktion));
             assert!(a.frage.ends_with('?'));

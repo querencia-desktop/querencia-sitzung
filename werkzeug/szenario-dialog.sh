@@ -49,9 +49,9 @@ start d11 --neustart; shot d11-neustart-rueckfrage; q "key Escape" "wait 800"; e
 if ohne_system; then
     blocked "D12 --herunterfahren bestätigt fragt logind auf dem echten Systembus – ausgelassen (Auflage G2-AH)"
 else
-    # D12 --herunterfahren: Rechts, Enter
-    start d12 --herunterfahren; shot d12-herunterfahren-rueckfrage; q "key Right" "wait 300" "key Return" "wait 1500"; ende
-    [ $RC = 0 ] && grep -q 'TROCKENLAUF: logind PowerOff' "$OUT/d12.log" && ok "D12 --herunterfahren: Rechts, Enter im Trockenlauf" || nok "D12 (Exit $RC)"
+    # D12 --herunterfahren: Rechts ×2, Enter (seit 0.1.7 steht „Neu starten“ dazwischen)
+    start d12 --herunterfahren; shot d12-herunterfahren-rueckfrage; q "key Right" "key Right" "wait 300" "key Return" "wait 1500"; ende
+    [ $RC = 0 ] && grep -q 'TROCKENLAUF: logind PowerOff' "$OUT/d12.log" && ok "D12 --herunterfahren: Rechts ×2, Enter im Trockenlauf" || nok "D12 (Exit $RC)"
 fi
 # D13 --sperren Rückfrage → Sperre → Entsperren
 start d13 --sperren; shot d13-sperren-rueckfrage; q "key Right" "wait 300" "key Return" "wait 2500"; shot d13-gesperrt

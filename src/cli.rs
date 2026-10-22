@@ -9,6 +9,9 @@
 //! querencia-sitzung --version | --hilfe
 //! ```
 //!
+//! Die Rückfrage zu `--herunterfahren` bietet wie in GNOME 2 auch „Neu
+//! starten“ an (0.1.7); Vorgabe und Countdown bleiben beim Herunterfahren.
+//!
 //! Kein Dialog zählt von selbst herunter: Sie warten, bis jemand wählt
 //! (Entscheidung des Besitzers, 20.10.2026, QD-062). Den Countdown gibt es nur
 //! auf Wunsch: `--countdown SEK` oder `[Dialog] Countdown=an` in
@@ -220,7 +223,8 @@ Befehle (genau einer):
   --sperren           Bildschirm sperren mit Rückfrage
   --sperren --sofort  Bildschirm sofort sperren (Tastenkürzel, Leerlauf)
   --neustart          Neu starten mit Rückfrage
-  --herunterfahren    Herunterfahren mit Rückfrage
+  --herunterfahren    Herunterfahren mit Rückfrage; der Dialog bietet auch
+                      Neu starten an (Abbrechen, Neu starten, Herunterfahren)
   --leerlauf MIN      Leerlaufdienst: sperrt nach MIN Minuten ohne Eingabe
   --leerlauf-sekunden SEK   dasselbe in Sekunden (für Prüfungen)
                       Gesperrt schaltet der Leerlaufdienst die Bildschirme
@@ -351,6 +355,7 @@ mod tests {
         assert_eq!(p(&["--help"]), Ok(Befehl::Hilfe));
         assert_eq!(p(&["-h"]), Ok(Befehl::Hilfe));
         assert!(HILFE.contains("--sperren --sofort"));
+        assert!(HILFE.contains("Abbrechen, Neu starten, Herunterfahren"));
     }
 
     #[test]

@@ -1,5 +1,22 @@
 # Änderungen
 
+## 0.1.7 – 2026-10-23
+
+Dialog „Herunterfahren“ mit „Neu starten“:
+
+- `--herunterfahren` (Panel → System → „Ausschalten …“) bietet wie in
+  GNOME 2 auch „Neu starten“ an. Reihenfolge: Abbrechen, Neu starten,
+  Herunterfahren. Den Fokus hat weiter „Abbrechen“; Herunterfahren ist der
+  Vorgabeknopf und das Ziel eines Countdowns. „Neu starten“ löst sofort den
+  Neustart aus, über denselben logind-Weg wie `--neustart`
+  (`CanReboot`, dann `Reboot` mit interactive=true).
+- Frage „Shut down or restart this system now?“ bzw. „Möchten Sie den
+  Rechner jetzt herunterfahren oder neu starten?“. Die Zugriffstasten sind
+  verschieden (de A/t/H, en C/R/S).
+- Bereitschaft und Ruhezustand sind nicht dabei.
+- Prüfwerkzeug: `szenario-herunterfahren.sh` (H01–H12) mit
+  `logind-ersatz.py` auf einem Wegwerf-Systembus.
+
 ## 0.1.6 – 2026-10-22
 
 Bildschirm aus nach der Sperre:

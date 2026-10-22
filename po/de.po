@@ -94,7 +94,7 @@ msgstr "Passwort für {user}:"
 msgid "Connecting to the authentication service…"
 msgstr "Verbindung zum Legitimierungsdienst …"
 
-#: src/bin/querencia-polkit-agent.rs:309 src/dialog.rs:326
+#: src/bin/querencia-polkit-agent.rs:309 src/dialog.rs:40
 msgid "_Cancel"
 msgstr "_Abbrechen"
 
@@ -131,78 +131,78 @@ msgstr "Neu s_tarten"
 msgid "_Shut Down"
 msgstr "_Herunterfahren"
 
-#: src/dialog.rs:41
+#: src/dialog.rs:46
 msgid "Log Out"
 msgstr "Abmelden"
 
-#: src/dialog.rs:42
+#: src/dialog.rs:47
 msgid "Lock Screen"
 msgstr "Bildschirm sperren"
 
-#: src/dialog.rs:43
+#: src/dialog.rs:48
 msgid "Restart"
 msgstr "Neu starten"
 
-#: src/dialog.rs:44
+#: src/dialog.rs:49
 msgid "Shut Down"
 msgstr "Herunterfahren"
 
-#: src/dialog.rs:51
+#: src/dialog.rs:56
 msgid ""
 "All applications will be closed. Anything not saved there will be lost."
 msgstr ""
 "Alle Anwendungen werden beendet. Was dort nicht gespeichert ist, geht verloren."
 
-#: src/dialog.rs:55
+#: src/dialog.rs:60
 msgid "Log out of this system now?"
 msgstr "Möchten Sie sich jetzt abmelden?"
 
-#: src/dialog.rs:56
+#: src/dialog.rs:61
 msgid ""
 "All applications of this session will be closed. Anything not saved there will be lost."
 msgstr ""
 "Alle Anwendungen dieser Sitzung werden beendet. Was dort nicht gespeichert ist, geht verloren."
 
-#: src/dialog.rs:63
+#: src/dialog.rs:68
 msgid "Lock the screen now?"
 msgstr "Möchten Sie den Bildschirm jetzt sperren?"
 
-#: src/dialog.rs:64
+#: src/dialog.rs:69
 msgid ""
 "The password is needed to unlock the screen. The applications keep running."
 msgstr ""
 "Zum Entsperren wird Ihr Passwort benötigt. Die Anwendungen laufen weiter."
 
-#: src/dialog.rs:71
+#: src/dialog.rs:76
 msgid "Restart this system now?"
 msgstr "Möchten Sie den Rechner jetzt neu starten?"
 
-#: src/dialog.rs:76
-msgid "Shut down this system now?"
-msgstr "Möchten Sie den Rechner jetzt herunterfahren?"
+#: src/dialog.rs:82
+msgid "Shut down or restart this system now?"
+msgstr "Möchten Sie den Rechner jetzt herunterfahren oder neu starten?"
 
-#: src/dialog.rs:88
+#: src/dialog.rs:94
 #, no-c-format
 msgid "You will be automatically logged out in {n} second."
 msgid_plural "You will be automatically logged out in {n} seconds."
 msgstr[0] "Sie werden in {n} Sekunde automatisch abgemeldet."
 msgstr[1] "Sie werden in {n} Sekunden automatisch abgemeldet."
 
-#: src/dialog.rs:94
+#: src/dialog.rs:100
 #, no-c-format
 msgid "The screen will be locked automatically in {n} second."
 msgid_plural "The screen will be locked automatically in {n} seconds."
 msgstr[0] "Der Bildschirm wird in {n} Sekunde automatisch gesperrt."
 msgstr[1] "Der Bildschirm wird in {n} Sekunden automatisch gesperrt."
 
-#: src/dialog.rs:100
+#: src/dialog.rs:106
 #, no-c-format
 msgid "This system will be automatically restarted in {n} second."
 msgid_plural "This system will be automatically restarted in {n} seconds."
 msgstr[0] "Der Rechner wird in {n} Sekunde automatisch neu gestartet."
 msgstr[1] "Der Rechner wird in {n} Sekunden automatisch neu gestartet."
 
-#: src/dialog.rs:106
+#: src/dialog.rs:112
 #, no-c-format
 msgid "This system will be automatically shut down in {n} second."
 msgid_plural "This system will be automatically shut down in {n} seconds."
@@ -210,24 +210,24 @@ msgstr[0] "Der Rechner wird in {n} Sekunde automatisch heruntergefahren."
 msgstr[1] "Der Rechner wird in {n} Sekunden automatisch heruntergefahren."
 
 #. TRANSLATORS: steht unter der Countdown-Zeile, solange ein anderes Fenster aktiv ist.
-#: src/dialog.rs:181
+#: src/dialog.rs:187
 msgid "Paused while this window is not active."
 msgstr "Angehalten, solange dieses Fenster nicht aktiv ist."
 
-#: src/dialog.rs:201
+#: src/dialog.rs:220
 msgid "End Session"
 msgstr "Sitzung beenden"
 
-#: src/dialog.rs:202
+#: src/dialog.rs:221
 msgid "End this session now?"
 msgstr "Diese Sitzung jetzt beenden?"
 
-#: src/dialog.rs:203
+#: src/dialog.rs:222
 msgid ""
 "Log Out closes all applications of this session; Restart and Shut Down stop the computer. Anything not saved will be lost."
 msgstr ""
 "Abmelden beendet alle Anwendungen dieser Sitzung; Neu starten und Herunterfahren beenden den Rechner. Was nicht gespeichert ist, geht verloren."
 
-#: src/dialog.rs:497
+#: src/dialog.rs:523
 msgid "_Close"
 msgstr "_Schließen"

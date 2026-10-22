@@ -197,3 +197,29 @@ QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-bildschirm.sh 1 300   # B
   `BildschirmAus=0`, Vorgabe 120 s ohne Datei.
 - NOT TESTED: Wayland-Hemmung (idle-inhibit) eines Videoprogramms, echte
   Monitore (DPMS) statt headless.
+
+## Dialog „Herunterfahren“ mit „Neu starten“ (0.1.7)
+
+```bash
+QS_BIN=<binary> QS_SPRACHE=de QS_GROESSE=1024x768 \
+    bash werkzeug/gui-pruefung.sh szenario-herunterfahren.sh 1 240   # H01–H12, ca. 1 min
+```
+
+- Reihenfolge Abbrechen, Neu starten, Herunterfahren. Den Fokus hat
+  „Abbrechen“, Vorgabeknopf (GTK-Standardwidget) und Countdown-Ziel ist
+  „Herunterfahren“; „Neu starten“ löst sofort aus, auch während eines
+  Countdowns.
+- Neu starten und Herunterfahren fragen hier nicht das echte logind:
+  `werkzeug/logind-ersatz.py` belegt `org.freedesktop.login1` auf einem
+  Wegwerf-Systembus im isolierten Laufzeitordner
+  (`DBUS_SYSTEM_BUS_ADDRESS`), antwortet auf `CanReboot`/`CanPowerOff` mit
+  `yes` und schreibt jeden Aufruf nach `nachweis/gui/h-logind-ersatz.log`.
+  Das Szenario bricht ab, wenn ein gestarteter Dialog einen anderen
+  Systembus hat; `QS_TROCKENLAUF=1` gilt zusätzlich, `Reboot`/`PowerOff`
+  dürfen nie ankommen (H12).
+- H01 (Maus) läuft nur bei 1280×720 (Vorgabe von `QS_GROESSE`); die
+  Koordinaten sind je Sprache im Foto gemessen.
+- Fotos hell und dunkel (Settings-Portal-Ersatz wie beim Dunkelmodus) als
+  `h02-hell-…`, `h11-dunkel-…`, `h08-countdown-…` je Sprache und Größe.
+- `szenario-dialog.sh` D12 wählt seit 0.1.7 „Herunterfahren“ mit zweimal
+  Pfeil rechts (läuft nur mit `QS_OHNE_SYSTEM=0`).
