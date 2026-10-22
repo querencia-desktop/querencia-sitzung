@@ -1,5 +1,46 @@
 # Änderungen
 
+## 0.1.4 – 2026-10-22
+
+Bildschirmschoner-Dienst, Dunkelmodus der Dialoge (QD-104, QD-109, QD-123):
+
+- Der Leerlaufdienst bietet `org.freedesktop.ScreenSaver` auf dem
+  Sitzungsbus an (an `/org/freedesktop/ScreenSaver` und `/ScreenSaver`).
+  Browser und Player halten damit die Leerlaufsperre an, direkt oder über
+  `xdg-desktop-portal-gtk`. Das Portal meldete bisher etwa alle 10 s
+  „Backend call failed“.
+  - `Inhibit`/`UnInhibit`: Solange ein Cookie gilt, sperrt der Leerlauf
+    nicht. Fällt das letzte weg, zählt der Leerlauf von vorn. Ein Cookie
+    hebt nur auf, wer es geholt hat. Verlässt ein Programm den Bus,
+    fallen seine Cookies weg. Je Programm höchstens 64.
+  - `Lock` und `SetActive(true)` sperren sofort. `SetActive(false)`
+    entsperrt nicht und liefert `false`.
+  - `GetActive`, `GetActiveTime` und das Signal `ActiveChanged` folgen dem
+    Sperrbildschirm, auch dem vom Tastenkürzel (der wird spätestens nach
+    5 s bemerkt).
+  - `SimulateUserActivity` zählt den Leerlauf von vorn.
+  - `org.gnome.SessionManager` bietet die Sitzung bewusst nicht an. Mit
+    einem Besitzer dieses Namens schaltet das Portal auf den GNOME-Weg um
+    und erwartet die ganze Sitzungsverwaltung von gnome-session.
+  - Der Leerlaufdienst läuft dafür in einer GLib-Hauptschleife
+    (neue Abhängigkeit `glib-unix`). Einen eigenen Autostart braucht der
+    Dienst nicht, er kommt mit dem Leerlaufdienst.
+- Dialog „Sitzung beenden“, Rückfragen und polkit-Agent folgen jetzt auch
+  dann dem dunklen Farbschema, wenn es beim Start schon gilt. GTK 4.22
+  zeigte sie in diesem Fall hell, bis das Schema wechselte. Die Dialoge
+  melden die Einstellung `gtk-interface-color-scheme` nach dem Start
+  einmal neu (wie das Panel). Eigene Farben haben sie weiterhin nicht.
+- Emoji in der labwc-Titelleiste (QD-123): Isoliert erscheinen einfache
+  Emoji, Flaggen, Flaggen mit Tag-Folgen, ZWJ-Folgen, Hauttöne und Emoji
+  17 richtig. Tag-Zeichen ohne Flagge bleiben unsichtbar. Kästchen mit
+  Hex-Ziffern zeigt labwc nur für Zeichen, die keine installierte Schrift
+  hat (das System hat nur DejaVu, FreeFont und Noto Color Emoji). Keine
+  Änderung an `rc.xml`, Grenze in `docs/testing.md`.
+- Prüfwerkzeug: Szenarien `szenario-schoner.sh`, `szenario-dunkel.sh`
+  (Portal-Ersatz aus der Dunkel-Prüfung von Screenshot 0.2.10) und
+  `szenario-emoji.sh`; `isoliert.py` kennt `QS_LAUFZEIT`, `QS_PORTAL`,
+  `QS_RC_XML` und `QS_LANG`.
+
 ## 0.1.3 – 2026-10-20
 
 Sauberes Abmelden, Rückfragen ohne Countdown (QD-062, G2-AI):

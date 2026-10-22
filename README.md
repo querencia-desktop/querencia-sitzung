@@ -12,8 +12,8 @@ Neu starten, Herunterfahren und Leerlaufsperre, dazu der polkit-Agent
 
 | | |
 |---|---|
-| Version | 0.1.3 (Tags `sitzung/0.1.3`, `sitzung/0.1.3-1`): Rückfragen ohne Countdown, sauberes Abmelden (QD-062) |
-| Auf der Entwicklungs-VM | live seit 20.10.2026 |
+| Version | 0.1.4 (Tags `sitzung/0.1.4`, `sitzung/0.1.4-int`): Dienst `org.freedesktop.ScreenSaver` (QD-104), Dialoge im Dunkelmodus (QD-109); davor 0.1.3: Rückfragen ohne Countdown, sauberes Abmelden (QD-062) |
+| Auf der Entwicklungs-VM | 0.1.3 live seit 20.10.2026; 0.1.4 wartet auf Freigabe |
 | Letzte Prüfung | 20.10.2026: fmt, Clippy, 49 + 10 Unit-Tests; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Sprache Deutsch und Englisch je 7/7 |
 | Getestet auf | Ubuntu 26.04, labwc 0.9.8, GTK 4.22 |
 
@@ -36,7 +36,8 @@ querencia-sitzung --version | --hilfe
 | Neu starten, Herunterfahren | systemd-logind D-Bus `CanReboot`/`CanPowerOff`, dann `Reboot`/`PowerOff` (interactive=true, polkit darf fragen) | `src/aktion.rs` |
 | Sperrbildschirm | ext-session-lock-v1 direkt über wayland-client (kein GTK), Cairo/Pango, eine Fläche je Ausgang, Uhr, Passwortfeld | `src/sperre.rs` |
 | Passwort | PAM über `dlopen("libpam.so.0")` (keine PAM-Entwicklungsdateien auf der VM), Dienst `querencia-sitzung` falls in `/etc/pam.d`, sonst `login` | `src/pam.rs` |
-| Leerlauf | ext-idle-notify-v1, startet `--sperren --sofort` | `src/leerlauf.rs` |
+| Leerlauf | ext-idle-notify-v1, startet `--sperren --sofort`; bietet `org.freedesktop.ScreenSaver` an (Inhibit hält die Sperre an, Lock, GetActive, ActiveChanged), GLib-Hauptschleife | `src/leerlauf.rs`, `src/schoner.rs` |
+| Dunkelmodus | Farben nur aus dem GTK-Thema; Einstellung `gtk-interface-color-scheme` nach dem Start neu melden (GTK-4.22-Startfehler) | `src/farbschema.rs` |
 
 `QS_TROCKENLAUF=1`: Abmelden, Neu starten und Herunterfahren werden nur
 protokolliert. Zusammen mit `QS_TESTPASSWORT` und einem `XDG_RUNTIME_DIR`

@@ -92,3 +92,45 @@ QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-g2ai-abmelden.sh 1 60   #
     Benutzerprogramm.
 - Ohne Eingabegerät hat der headless labwc keine Tastatur am Sitz, dann wird
   kein Fenster aktiv. `eingabe.sh` steckt eine virtuelle Tastatur an.
+
+## ScreenSaver-Dienst, Dunkelmodus, Emoji im Titel (0.1.4)
+
+Liegt das Repo so tief, dass der Pfad des Wayland-Sockets länger als 108
+Zeichen wird (labwc: „File name too long“), setzt `QS_LAUFZEIT` einen
+kürzeren Ordner für die Laufzeitordner, z. B. `QS_LAUFZEIT=~/.cache/qs`.
+
+```bash
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-schoner.sh 1 330   # S01–S15, ca. 2 min
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-dunkel.sh 1 200    # 8 Fälle, ca. 30 s
+QS_LANG=C.UTF-8 QS_RC_XML=<querencia-runtime>/session/querencia/labwc/rc.xml \
+    QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-emoji.sh 1 150 # 11 Titel, Fotos
+```
+
+- **ScreenSaver (S01–S15):**
+  - Alles läuft am Wegwerf-Bus von `dbus-run-session`. Das Szenario bricht
+    ab, wenn `DBUS_SESSION_BUS_ADDRESS` auf `/run/user/` zeigt.
+  - Der Leerlauf beträgt 8 s.
+  - `werkzeug/schoner-client.py` hält Hemmungen über seine eigene
+    Busverbindung. `busctl --user` ruft die übrigen Methoden.
+    `gdbus monitor` zeichnet `ActiveChanged` auf.
+  - S14 startet `xdg-desktop-portal-gtk` im Wegwerf-Bus. Es hemmt über
+    `org.freedesktop.impl.portal.Inhibit` (Flag 8, Leerlauf) und hebt mit
+    `Request.Close` wieder auf.
+  - Belege: `schoner-busctl.txt`, `schoner-monitor.txt`,
+    `schoner-dienst.log`, `schoner-portal.log`.
+- **Dunkelmodus:** `gui-pruefung.sh` setzt für dieses Szenario `QS_PORTAL=1`.
+  - GTK fragt dann das Settings-Portal. Den Namen belegt
+    `werkzeug/portal-ersatz.py` mit den gsettings des Wegwerfprofils.
+  - Das Thema ist die Live-Ablage Querencia-Klassisch, nur gelesen und als
+    Link eingebunden.
+  - `werkzeug/grundfarbe.py` misst im Foto Grund- und Schriftfarbe um die
+    Bildmitte und den Kontrast nach WCAG 2 (Soll ≥ 4,5:1).
+- **Emoji im Titel:** Für jeden Titel aus `werkzeug/emoji-titel.py` öffnet
+  das Szenario ein `foot`-Fenster mit Serverdekoration.
+  `werkzeug/titelleisten.py` stapelt die Titelleisten zu einem Bild.
+  - Grenze: labwc zeichnet Titel mit Pango und dem Fallback von
+    fontconfig. Kästchen mit Hex-Ziffern erscheinen nur für Zeichen, die
+    keine installierte Schrift hat, etwa Private Use (U+E000), Symbols for
+    Legacy Computing (U+1FB00), Hieroglyphen (U+13000) oder Tibetisch
+    (U+0F00). Abhilfe sind weitere Schriften im System, nicht die
+    `rc.xml`.

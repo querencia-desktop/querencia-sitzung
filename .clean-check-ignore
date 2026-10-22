@@ -7,7 +7,7 @@
 #      Vorlagen-Commit des Veröffentlichungsklons und bleiben dann im Root.
 # P002 Co-Authored-By in den Commit-Texten: bleibt im Arbeitsrepo; der
 #      Veröffentlichungsklon entfernt die Zeilen (ENTSCHEIDUNGEN Nr. 10).
-# H001 nachweis/gui/*.log, nachweis/logs/: Protokolle der Prüfläufe (G2-K)
+# H001 nachweis/gui/*.log, nachweis/logs/, nachweis/014/: Protokolle der Prüfläufe (G2-K, 0.1.4)
 #      auf der Entwicklungs-VM; nachweis/ wird im Veröffentlichungsklon
 #      herausgefiltert (ENTSCHEIDUNGEN Nr. 9).
 # Q003 werkzeug/szenario-*.sh: Fallüberschriften („# D08 Mnemonik Alt+M =

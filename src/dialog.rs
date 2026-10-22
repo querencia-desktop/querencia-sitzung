@@ -248,7 +248,10 @@ fn knopf(beschriftung: &str, symbole: &[&str]) -> gtk::Button {
     button
 }
 
+/// Abstände der Schaltflächen; Farben kommen nur aus dem GTK-Thema. Dazu
+/// die Abhilfe für den Dunkelmodus beim Start (QD-109).
 fn css_laden() {
+    crate::farbschema::startfehler_beheben("querencia-sitzung");
     let css = gtk::CssProvider::new();
     css.load_from_string("window.qs-dialog button { padding: 4px 10px; min-width: 72px; }");
     if let Some(display) = gdk::Display::default() {

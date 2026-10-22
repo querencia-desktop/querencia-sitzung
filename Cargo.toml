@@ -1,6 +1,6 @@
 [package]
 name = "querencia-sitzung"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 rust-version = "1.92"
 description = "Querencia Sitzung: Abmelden, Bildschirm sperren, Neu starten, Herunterfahren und Leerlaufsperre für Querencia Desktop"
@@ -20,6 +20,9 @@ cairo-rs = { version = "0.22", features = ["png"] }
 pango = "0.22"
 pangocairo = "0.22"
 libc = "0.2"
+# Der Leerlaufdienst bedient Wayland-Socket und Sitzungsbus in einer
+# GLib-Hauptschleife (QD-104); glib 0.22 führt die Fd-Quelle hier.
+glib-unix = "0.22"
 # Übersetzungen über GNU gettext der Systembibliothek (glibc), wie die
 # übrigen Querencia-Programme.
 gettext-rs = { version = "0.8", features = ["gettext-system"] }

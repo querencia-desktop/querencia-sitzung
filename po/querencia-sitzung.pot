@@ -73,47 +73,47 @@ msgstr ""
 msgid "Cannot start the lock screen ({program}): {error}"
 msgstr ""
 
-#: src/bin/querencia-polkit-agent.rs:247
+#: src/bin/querencia-polkit-agent.rs:250
 msgid "Authenticate"
 msgstr ""
 
 #. TRANSLATORS: nur wenn polkitd keine eigene Meldung schickt.
-#: src/bin/querencia-polkit-agent.rs:264
+#: src/bin/querencia-polkit-agent.rs:267
 msgid "An application requires authentication."
 msgstr ""
 
-#: src/bin/querencia-polkit-agent.rs:275
+#: src/bin/querencia-polkit-agent.rs:278
 #, no-c-format
 msgid "Action: {action}"
 msgstr ""
 
-#: src/bin/querencia-polkit-agent.rs:282
+#: src/bin/querencia-polkit-agent.rs:285
 #, no-c-format
 msgid "Password for {user}:"
 msgstr ""
 
-#: src/bin/querencia-polkit-agent.rs:294
+#: src/bin/querencia-polkit-agent.rs:297
 msgid "Connecting to the authentication service…"
 msgstr ""
 
-#: src/bin/querencia-polkit-agent.rs:306 src/dialog.rs:323
+#: src/bin/querencia-polkit-agent.rs:309 src/dialog.rs:326
 msgid "_Cancel"
 msgstr ""
 
-#: src/bin/querencia-polkit-agent.rs:310
+#: src/bin/querencia-polkit-agent.rs:313
 msgid "_Authenticate"
 msgstr ""
 
-#: src/bin/querencia-polkit-agent.rs:427
+#: src/bin/querencia-polkit-agent.rs:430
 msgid "Enter the password and press Enter"
 msgstr ""
 
-#: src/bin/querencia-polkit-agent.rs:504
+#: src/bin/querencia-polkit-agent.rs:507
 #, no-c-format
 msgid "Wrong password, please try again ({attempt} of {max})"
 msgstr ""
 
-#: src/bin/querencia-polkit-agent.rs:549
+#: src/bin/querencia-polkit-agent.rs:552
 msgid "Checking the password…"
 msgstr ""
 
@@ -226,6 +226,6 @@ msgid ""
 "Log Out closes all applications of this session; Restart and Shut Down stop the computer. Anything not saved will be lost."
 msgstr ""
 
-#: src/dialog.rs:494
+#: src/dialog.rs:497
 msgid "_Close"
 msgstr ""

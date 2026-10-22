@@ -16,6 +16,9 @@
 //! Aufruf: `querencia-polkit-agent` (läuft bis zum Sitzungsende; für den
 //! Autostart), `--version`, `--hilfe`.
 
+// Dunkelmodus beim Start (QD-109), wie die Dialoge von querencia-sitzung.
+#[path = "../farbschema.rs"]
+mod farbschema;
 // Übersetzungen: dasselbe Modul und dieselbe Domäne wie querencia-sitzung
 // (beide Programme liegen in derselben Ablage).
 #[allow(dead_code)]
@@ -858,6 +861,8 @@ pub fn locale_fuer_polkit(language: Option<&str>, lang: Option<&str>) -> String 
 }
 
 fn css_laden() {
+    // Dunkelmodus auch, wenn die Sitzung schon dunkel startet (QD-109).
+    farbschema::startfehler_beheben("querencia-polkit-agent");
     let css = gtk::CssProvider::new();
     css.load_from_string("window.qs-dialog button { padding: 4px 10px; min-width: 72px; } window.qs-dialog entry { min-width: 260px; }");
     if let Some(display) = gdk::Display::default() {

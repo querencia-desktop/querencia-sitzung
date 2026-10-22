@@ -32,7 +32,10 @@ EINGABE=$E/werkzeug/eingabe.sh
 QS_GROESSE=${QS_GROESSE:-}
 X
     echo "== Szenario $sz ($ausgaenge Ausgang/Ausgänge, Limit $limit s)"
-    QS_OHNE_SYSTEM=${QS_OHNE_SYSTEM:-1} LANG=en_US.UTF-8 LANGUAGE=${QS_SPRACHE:-de} \
+    # Dunkel-Prüfung (QD-109): Farbschema über das Settings-Portal (Ersatz)
+    local portal=0
+    [ "$sz" = szenario-dunkel.sh ] && portal=1
+    QS_PORTAL=$portal QS_OHNE_SYSTEM=${QS_OHNE_SYSTEM:-1} LANG=en_US.UTF-8 LANGUAGE=${QS_SPRACHE:-de} \
         python3 -I "$E/werkzeug/isoliert.py" "$PROFIL" "$E/werkzeug/$sz" "$limit" "$ausgaenge" | tee "$OUT/status-${sz%.sh}.txt" || true
     cp "$PROFIL"/logs/lauf-*.log "$OUT/labwc-${sz%.sh}.log" 2>/dev/null || true
     if [ "$sz" = szenario-abmelden.sh ]; then
