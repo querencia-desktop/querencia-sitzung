@@ -32,9 +32,10 @@ EINGABE=$E/werkzeug/eingabe.sh
 QS_GROESSE=${QS_GROESSE:-}
 X
     echo "== Szenario $sz ($ausgaenge Ausgang/Ausgänge, Limit $limit s)"
-    # Dunkel-Prüfung (QD-109): Farbschema über das Settings-Portal (Ersatz)
+    # Dunkel-Prüfung (QD-109) und fremde Programme im Dunkelmodus (QD-103,
+    # 0.1.5): Farbschema über das Settings-Portal (Ersatz)
     local portal=0
-    [ "$sz" = szenario-dunkel.sh ] && portal=1
+    case $sz in szenario-dunkel.sh | szenario-gtk3-messung.sh | szenario-fremd-dunkel.sh) portal=1 ;; esac
     QS_PORTAL=$portal QS_OHNE_SYSTEM=${QS_OHNE_SYSTEM:-1} LANG=en_US.UTF-8 LANGUAGE=${QS_SPRACHE:-de} \
         python3 -I "$E/werkzeug/isoliert.py" "$PROFIL" "$E/werkzeug/$sz" "$limit" "$ausgaenge" | tee "$OUT/status-${sz%.sh}.txt" || true
     cp "$PROFIL"/logs/lauf-*.log "$OUT/labwc-${sz%.sh}.log" 2>/dev/null || true

@@ -137,3 +137,36 @@ QS_LANG=C.UTF-8 QS_RC_XML=<querencia-runtime>/session/querencia/labwc/rc.xml \
     Computing und Private Use. Der Befund vom 22.10. („4K #“ und rund 20
     Kästchen, Fall t12/t13) ist so nachgestellt. Abhilfe sind weitere
     Schriften im System (etwa Noto CJK), nicht die `rc.xml`.
+
+## Dunkelmodus für GTK 3 und die labwc-Rahmen (0.1.5)
+
+```bash
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-gtk3-messung.sh 1 150 # Messung m1–m10
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-fremd-dunkel.sh 1 240  # F01–F13, 21 Fälle
+```
+
+- Beide Szenarien laufen mit dem Portal-Ersatz (`QS_PORTAL=1`); das
+  Farbschema schalten sie über die gsettings des Wegwerfprofils.
+- **Messung GTK 3:** `werkzeug/gtk3-fenster.py` öffnet ein GTK-3-Fenster
+  über ctypes (`libgtk-3.so.0`; GTK-3-Introspection und `gtk3-demo` fehlen
+  auf der VM) und meldet `gtk-theme-name`,
+  `gtk-application-prefer-dark-theme` und die Themenfarben. Befund:
+  - Portal-Farbschema allein: hell (m2).
+  - `settings.ini` mit `prefer-dark` beim Start: dunkel, Kontrast 8,1:1
+    (m3).
+  - `settings.ini` erst im Lauf geschrieben: hell, auch nach einem
+    Themenwechsel (m4, m10).
+  - Ein zweites `[Settings]` am Dateiende geht früheren Einträgen vor (m6).
+  - `gtk-theme` folgt live, mit und ohne Portal (m8, m9); `Thema:dark`
+    kennt GTK 3 nicht (m7).
+- **Fremde Programme dunkel:**
+  - Der Leerlaufdienst (`--leerlauf 600`) läuft im isolierten labwc;
+    dessen Konfigordner liegt im Profil, also unter `$XDG_CONFIG_HOME`.
+  - `settings.ini` und `themerc-override` beginnen mit fremden Zeilen, die
+    byte-gleich bleiben müssen.
+  - Fotos: ein `foot`-Fenster mit Serverdekoration für die Titelleiste
+    (`rahmenfarbe.py`), ein GTK-3-Fenster (`grundfarbe.py`, 400×120).
+  - Weitere Fälle: Thema ohne Dunkelfassung, Start bei dunkel, Dateien nur
+    mit Block, Verweis, beschädigter Block, ScreenSaver antwortet weiter.
+- Grenze: Die Titelknöpfe sind PNG des Themas (heller Kasten) und bleiben
+  auch dunkel hell; `themerc-override` kann keine Bilder tauschen.

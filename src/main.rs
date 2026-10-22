@@ -4,7 +4,8 @@
 //! Siehe `cli.rs` für die Befehle. Dialoge: GTK 4 (`dialog.rs`);
 //! Aktionen: `aktion.rs`; Sperrbildschirm: `sperre.rs` (ext-session-lock);
 //! Leerlauf: `leerlauf.rs` (ext-idle-notify) mit dem Dienst
-//! `org.freedesktop.ScreenSaver` (`schoner.rs`); Passwort: `pam.rs`.
+//! `org.freedesktop.ScreenSaver` (`schoner.rs`) und dem Dunkelmodus für
+//! GTK 3 und die labwc-Rahmen (`mitschalten.rs`); Passwort: `pam.rs`.
 
 mod aktion;
 mod aufraeumen;
@@ -14,6 +15,7 @@ mod einstellung;
 mod farbschema;
 mod i18n;
 mod leerlauf;
+mod mitschalten;
 mod pam;
 mod schoner;
 mod sperre;

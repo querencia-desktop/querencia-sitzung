@@ -16,6 +16,9 @@
 //! nicht; fällt die letzte weg, zählt der Leerlauf von vorn. Dafür läuft
 //! der Dienst in einer GLib-Hauptschleife, die den Wayland-Socket und den
 //! Sitzungsbus gemeinsam bedient.
+//!
+//! Seit 0.1.5 schaltet der Dienst außerdem den Dunkelmodus für fremde
+//! GTK-3-Programme und die labwc-Fensterrahmen mit (`mitschalten.rs`).
 
 use std::cell::RefCell;
 use std::io::ErrorKind;
@@ -388,6 +391,9 @@ fn dienst(sekunden: u32) -> Result<(), String> {
     let bus = schoner::anbieten(zustand.clone());
     zustand.borrow_mut().bus = bus;
     DIENST.with(|d| *d.borrow_mut() = Rc::downgrade(&zustand));
+    // Dunkelmodus für GTK 3 und die labwc-Rahmen (0.1.5, QD-103); lebt bis
+    // zum Ende des Dienstes.
+    let _dunkel = crate::mitschalten::starten();
 
     let schleife = glib::MainLoop::new(None, false);
     let fehler: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
