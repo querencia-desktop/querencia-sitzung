@@ -2,15 +2,14 @@
 
 ## 0.1.5 – 2026-10-22
 
-Dunkelmodus für fremde GTK-3-Programme und die labwc-Fensterrahmen
-(QD-103, QD-088 Punkt 6):
+Dunkelmodus für fremde GTK-3-Programme (QD-103):
 
 - Der Leerlaufdienst schaltet bei `dunkel_aktiv` mit: Farbschema
   `prefer-dark` (gsettings `org.gnome.desktop.interface color-scheme`)
   und ein GTK-Thema mit `gtk-4.0/gtk-dark.css`, wie Panel und
   Einstellungen. Er gleicht beim Start ab und bei jedem Wechsel von
   Farbschema oder Thema.
-- **GTK 3:** GTK 3.24 kennt das Farbschema des Portals nicht und liest
+- GTK 3.24 kennt das Farbschema des Portals nicht und liest
   `gtk-application-prefer-dark-theme` nur beim Start aus
   `~/.config/gtk-3.0/settings.ini` (isoliert gemessen,
   `nachweis/015-gtk3-messung`). Die Sitzung setzt dort einen
@@ -18,22 +17,16 @@ Dunkelmodus für fremde GTK-3-Programme und die labwc-Fensterrahmen
   `gtk-application-prefer-dark-theme=true`, nur wenn das Thema
   `gtk-3.0/gtk-dark.css` hat. Laufende GTK-3-Programme wechseln erst beim
   nächsten Start.
-- **labwc-Rahmen:** Die Sitzung schreibt einen gekennzeichneten Block mit
-  dunklen Farben in `<Konfigordner von labwc>/themerc-override` und lässt
-  labwc das Thema neu laden (SIGHUP an `LABWC_PID`, wie
-  `labwc --reconfigure`). Den Konfigordner nimmt sie aus der Befehlszeile
-  von labwc (`-C`), sonst `~/.config/labwc`; sie schreibt nur unter
-  `$XDG_CONFIG_HOME`. Offene Fenster wechseln sofort. Die Farben sind
-  Platzhalter aus der GTK-Dunkelfassung von Querencia-Klassisch (Titel
-  `#3c3b37`/`#353430`, Schrift `#eeeeec`, Kontrast ≥ 6,27:1), bis das
-  labwc-Dunkelthema vorliegt. Die Titelknöpfe sind Bilder des Themas und
-  bleiben hell.
 - Bei „hell“ fällt der Block wieder weg. Fremde Zeilen bleiben byte-gleich;
   eine Datei, die nur aus dem Block bestand, wird entfernt. Verweise
   (Symlinks) und Dateien mit beschädigtem Block bleiben unberührt, das
   Protokoll nennt sie.
+- Die labwc-Fensterrahmen schaltet die Sitzung nicht. Ein Entwurf mit
+  `themerc-override` ist wieder ausgebaut (Entscheidung der Startsession,
+  22.10.2026): Er konnte die Titelknöpfe (PNG des Themas) nicht tauschen.
+  Ein dunkles labwc-Thema wählen die Einstellungen in `rc.xml`.
 - Prüfwerkzeug: `szenario-gtk3-messung.sh` (Messung GTK 3, Fälle m1–m10),
-  `szenario-fremd-dunkel.sh` (21 Fälle), `gtk3-fenster.py` (GTK-3-Fenster
+  `szenario-fremd-dunkel.sh` (F01–F14), `gtk3-fenster.py` (GTK-3-Fenster
   über ctypes, ohne GObject-Introspection), `rahmenfarbe.py`
   (Titelleiste im Foto).
 

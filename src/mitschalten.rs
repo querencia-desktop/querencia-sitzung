@@ -1,38 +1,36 @@
-//! Dunkelmodus für fremde GTK-3-Programme und die labwc-Fensterrahmen
-//! (0.1.5, QD-103, QD-088 Punkt 6), geführt vom Leerlaufdienst.
+//! Dunkelmodus für fremde GTK-3-Programme (0.1.5, QD-103), geführt vom
+//! Leerlaufdienst.
 //!
 //! Die Querencia-Programme (GTK 4) folgen dem Farbschema über das
-//! Settings-Portal selbst. Zwei Teile der Sitzung tun das nicht:
-//! - **GTK 3** (3.24 unter Wayland, isoliert gemessen,
-//!   `nachweis/015-gtk3-messung`) kennt das Farbschema des Portals nicht
-//!   (Fall m2). Thema und Schrift nimmt es live aus den gsettings, die
-//!   Dunkelfassung aber nur aus `gtk-application-prefer-dark-theme` in
-//!   `$XDG_CONFIG_HOME/gtk-3.0/settings.ini`, und das nur beim Start (m3,
-//!   m4, m10). Ein Abschnitt `[Settings]`, der am Dateiende noch einmal
-//!   beginnt, geht früheren Einträgen vor (m6). Laufende GTK-3-Programme
-//!   wechseln deshalb erst beim nächsten Start.
-//! - **labwc** zeichnet Titelleisten und Rahmen nach seinem Thema. Es liest
-//!   danach `<Konfigordner>/themerc-override`; dessen Werte gehen dem Thema
-//!   vor (`src/theme.c`, `theme_init`). `labwc --reconfigure` ist ein
-//!   SIGHUP an `LABWC_PID`.
+//! Settings-Portal selbst. GTK 3 (3.24 unter Wayland, isoliert gemessen,
+//! `nachweis/015-gtk3-messung`) kennt das Farbschema des Portals nicht
+//! (Fall m2). Thema und Schrift nimmt es live aus den gsettings, die
+//! Dunkelfassung aber nur aus `gtk-application-prefer-dark-theme` in
+//! `$XDG_CONFIG_HOME/gtk-3.0/settings.ini`, und das nur beim Start (m3, m4,
+//! m10). Ein Abschnitt `[Settings]`, der am Dateiende noch einmal beginnt,
+//! geht früheren Einträgen vor (m6). Laufende GTK-3-Programme wechseln
+//! deshalb erst beim nächsten Start.
 //!
 //! Kriterium ist `dunkel_aktiv` wie in Panel und Einstellungen: Farbschema
-//! `prefer-dark` **und** ein GTK-Thema mit `gtk-4.0/gtk-dark.css`. Den
-//! GTK-3-Block gibt es zusätzlich nur, wenn das Thema `gtk-3.0/gtk-dark.css`
-//! hat. Beide Dateien bekommen einen gekennzeichneten Block zwischen
-//! [`ANFANG`] und [`ENDE`]; fremde Zeilen bleiben byte-gleich. Bei „hell“
-//! fällt der Block weg, eine Datei, die nur noch aus ihm bestand, wird
-//! entfernt. Verweise (Symlinks) und Dateien mit beschädigtem Block bleiben
-//! unberührt.
+//! `prefer-dark` **und** ein GTK-Thema mit `gtk-4.0/gtk-dark.css`; dazu muss
+//! das Thema `gtk-3.0/gtk-dark.css` haben. Die Datei bekommt dann einen
+//! gekennzeichneten Block zwischen [`ANFANG`] und [`ENDE`]; fremde Zeilen
+//! bleiben byte-gleich. Bei „hell“ fällt der Block weg, eine Datei, die nur
+//! noch aus ihm bestand, wird entfernt. Verweise (Symlinks) und Dateien mit
+//! beschädigtem Block bleiben unberührt.
+//!
+//! Die labwc-Fensterrahmen schaltet die Sitzung nicht: Ein dunkles
+//! labwc-Thema wählen die Einstellungen in `rc.xml` (Entscheidung der
+//! Startsession, 22.10.2026).
 
 use std::io::ErrorKind;
 use std::os::unix::fs::PermissionsExt;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use gtk::gio;
 use gtk::prelude::*;
 
-use crate::aktion::{labwc_exit_command, protokoll};
+use crate::aktion::protokoll;
 
 pub const ANFANG: &str =
     "# >>> querencia-sitzung: Dunkelmodus (von der Sitzung verwaltet, nicht von Hand ändern)";
@@ -41,42 +39,6 @@ pub const ENDE: &str = "# <<< querencia-sitzung";
 /// Block für `gtk-3.0/settings.ini`. `[Settings]` beginnt neu, weil davor
 /// ein anderer Abschnitt stehen kann (Messung m6).
 pub const GTK3_BLOCK: &str = "[Settings]\ngtk-application-prefer-dark-theme=true\n";
-
-/// Block für `themerc-override`. **Platzhalter**, bis das labwc-Dunkelthema
-/// von Thema 0.3 (Worker thema-022) vorliegt: Farben aus der Dunkelfassung
-/// von Querencia-Klassisch (GTK, Thema 0.2.1): Grund `#3c3b37`,
-/// Seitenleiste/Menü `#353430`, Schrift `#dfdbd2`, Umriss `#23221f` und
-/// Grau `#bdb7b1` wie die Statussymbole im Panel (QD-088 Nr. 4), Fehlerrot
-/// `#ed8b85` (QD-088 Nr. 1). Kontrast nach WCAG 2: aktiver Titel `#eeeeec`
-/// auf `#3c3b37` 9,65:1, inaktiver `#bdb7b1` auf `#353430` 6,27:1,
-/// Fensterwechsler und Menü `#dfdbd2` auf `#353430` 9,02:1.
-/// Die Titelknöpfe sind Bilder des Themas (PNG) und bleiben, wie sie sind.
-pub const THEMERC_DUNKEL: &str = "\
-window.active.border.color: #23221f
-window.inactive.border.color: #2b2a27
-window.active.title.bg: Gradient Vertical
-window.active.title.bg.color: #3c3b37
-window.active.title.bg.colorTo: #353430
-window.inactive.title.bg: Solid
-window.inactive.title.bg.color: #353430
-window.active.label.text.color: #eeeeec
-window.inactive.label.text.color: #bdb7b1
-window.active.button.unpressed.image.color: #eeeeec
-window.inactive.button.unpressed.image.color: #bdb7b1
-window.active.button.close.unpressed.image.color: #ed8b85
-window.inactive.button.close.unpressed.image.color: #c46e6e
-osd.bg.color: #353430
-osd.border.color: #23221f
-osd.label.text.color: #dfdbd2
-menu.items.bg.color: #353430
-menu.items.text.color: #dfdbd2
-menu.items.active.bg.color: #4a4944
-menu.items.active.text.color: #eeeeec
-menu.border.color: #23221f
-menu.separator.color: #4a4944
-menu.title.bg.color: #3c3b37
-menu.title.text.color: #eeeeec
-";
 
 const SCHEMA: &str = "org.gnome.desktop.interface";
 /// GTKs eingebautes Thema hat eine Dunkelfassung; „Default“ nennt GTK es,
@@ -186,7 +148,6 @@ pub struct Lage {
 pub struct Soll {
     pub dunkel_aktiv: bool,
     pub gtk3: bool,
-    pub labwc: bool,
 }
 
 pub fn soll(lage: Lage) -> Soll {
@@ -194,7 +155,6 @@ pub fn soll(lage: Lage) -> Soll {
     Soll {
         dunkel_aktiv,
         gtk3: dunkel_aktiv && lage.thema_gtk3_dunkel,
-        labwc: dunkel_aktiv,
     }
 }
 
@@ -241,93 +201,19 @@ pub fn thema_mit_dunkel(ordner: &[PathBuf], name: &str, gtk: &str) -> bool {
         })
 }
 
-/// Konfigordner aus der Befehlszeile von labwc (`-C`, `--config-dir`).
-pub fn labwc_konfig_aus_argv(argv: &[String]) -> Option<PathBuf> {
-    let mut it = argv.iter().skip(1);
-    let mut gefunden = None;
-    while let Some(a) = it.next() {
-        if a == "-C" || a == "--config-dir" {
-            gefunden = it.next().map(PathBuf::from);
-        } else if let Some(o) = a.strip_prefix("--config-dir=") {
-            gefunden = Some(PathBuf::from(o));
-        } else if let Some(o) = a.strip_prefix("-C").filter(|o| !o.is_empty()) {
-            gefunden = Some(PathBuf::from(o));
-        }
-    }
-    gefunden
-}
-
-/// Der Ordner, in dem labwc `themerc-override` liest: `-C` der Befehlszeile,
-/// sonst `$XDG_CONFIG_HOME/labwc`.
-pub fn labwc_konfigordner(argv: &[String], config_home: &Path) -> PathBuf {
-    labwc_konfig_aus_argv(argv).unwrap_or_else(|| config_home.join("labwc"))
-}
-
-fn kanonisch(p: &Path) -> PathBuf {
-    std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf())
-}
-
-/// Die Sitzung schreibt nur in Benutzerordner unter `$XDG_CONFIG_HOME`:
-/// läuft labwc mit der Vorgabe im Runtime-Repo oder einem Systemordner,
-/// bleibt der Rahmen hell.
-pub fn ordner_erlaubt(ordner: &Path, config_home: &Path) -> bool {
-    ordner.is_absolute()
-        && !ordner.components().any(|c| c == Component::ParentDir)
-        && kanonisch(ordner).starts_with(kanonisch(config_home))
-}
-
-/// labwc dieser Sitzung: PID aus `LABWC_PID` (nur wenn `/proc/<pid>/exe`
-/// ein labwc ist) und sein Konfigordner.
-fn labwc_der_sitzung() -> Result<(i32, PathBuf), String> {
-    let pid = std::env::var("LABWC_PID").map_err(|_| "LABWC_PID fehlt".to_string())?;
-    labwc_exit_command(Some(&pid), |p| {
-        std::fs::read_link(format!("/proc/{p}/exe")).ok()
-    })
-    .ok_or_else(|| format!("LABWC_PID {pid} ist kein labwc"))?;
-    let roh = std::fs::read(format!("/proc/{pid}/cmdline"))
-        .map_err(|e| format!("Befehlszeile von labwc {pid}: {e}"))?;
-    let argv: Vec<String> = roh
-        .split(|b| *b == 0)
-        .filter(|a| !a.is_empty())
-        .map(|a| String::from_utf8_lossy(a).into_owned())
-        .collect();
-    let pid: i32 = pid.parse().map_err(|_| format!("LABWC_PID {pid}"))?;
-    Ok((pid, labwc_konfigordner(&argv, &config_home())))
-}
-
-/// `labwc --reconfigure`: SIGHUP an labwc.
-fn labwc_neu_laden(pid: i32) {
-    // SAFETY: kill(2) mit einer geprüften PID (exe = labwc) und SIGHUP.
-    if unsafe { libc::kill(pid, libc::SIGHUP) } == 0 {
-        protokoll(&format!(
-            "Dunkelmodus: labwc {pid} lädt das Thema neu (SIGHUP)"
-        ));
-    } else {
-        protokoll(&format!(
-            "Dunkelmodus: SIGHUP an labwc {pid}: {}",
-            std::io::Error::last_os_error()
-        ));
-    }
-}
-
-fn melden(was: &str, pfad: &Path, r: Result<Abgleich, String>) -> bool {
+fn melden(was: &str, pfad: &Path, r: Result<Abgleich, String>) {
     match r {
-        Ok(Abgleich::Unveraendert) => false,
+        Ok(Abgleich::Unveraendert) => {}
         Ok(Abgleich::Geschrieben) => {
             protokoll(&format!(
                 "Dunkelmodus: {was} {} geschrieben",
                 pfad.display()
             ));
-            true
         }
         Ok(Abgleich::Entfernt) => {
             protokoll(&format!("Dunkelmodus: {was} {} entfernt", pfad.display()));
-            true
         }
-        Err(e) => {
-            protokoll(&format!("Dunkelmodus: {was}: {e}"));
-            false
-        }
+        Err(e) => protokoll(&format!("Dunkelmodus: {was}: {e}")),
     }
 }
 
@@ -351,21 +237,6 @@ fn anwenden(s: &gio::Settings, anlass: &str) {
         &ini,
         datei_abgleichen(&ini, soll.gtk3.then_some(GTK3_BLOCK)),
     );
-    match labwc_der_sitzung() {
-        Ok((pid, ordner)) if ordner_erlaubt(&ordner, &config_home()) => {
-            let datei = ordner.join("themerc-override");
-            let r = datei_abgleichen(&datei, soll.labwc.then_some(THEMERC_DUNKEL));
-            if melden("labwc-Rahmen", &datei, r) {
-                labwc_neu_laden(pid);
-            }
-        }
-        Ok((_, ordner)) => protokoll(&format!(
-            "Dunkelmodus: labwc-Konfigordner {} liegt nicht unter {}, Rahmen bleiben unverändert",
-            ordner.display(),
-            config_home().display()
-        )),
-        Err(e) => protokoll(&format!("Dunkelmodus: labwc-Rahmen: {e}")),
-    }
 }
 
 /// Gleicht beim Start ab und dann bei jedem Wechsel von Farbschema oder
@@ -498,7 +369,6 @@ mod tests {
         let hell = Soll {
             dunkel_aktiv: false,
             gtk3: false,
-            labwc: false,
         };
         assert_eq!(soll(l(false, true, true)), hell);
         // Thema ohne Dunkelfassung (Querencia-Klassisch 0.1): alles hell
@@ -507,8 +377,7 @@ mod tests {
             soll(l(true, true, true)),
             Soll {
                 dunkel_aktiv: true,
-                gtk3: true,
-                labwc: true
+                gtk3: true
             }
         );
         // GTK 3 nur mit gtk-3.0/gtk-dark.css
@@ -516,8 +385,7 @@ mod tests {
             soll(l(true, true, false)),
             Soll {
                 dunkel_aktiv: true,
-                gtk3: false,
-                labwc: true
+                gtk3: false
             }
         );
     }
@@ -540,67 +408,12 @@ mod tests {
         // a (ohne Dunkel) kommt zuerst und zählt
         assert!(!thema_mit_dunkel(&[a.clone(), b.clone()], "T", "gtk-4.0"));
         assert!(thema_mit_dunkel(&[b.clone(), a.clone()], "T", "gtk-3.0"));
-        assert!(!thema_mit_dunkel(std::slice::from_ref(&a), "Fehlt", "gtk-4.0"));
+        assert!(!thema_mit_dunkel(
+            std::slice::from_ref(&a),
+            "Fehlt",
+            "gtk-4.0"
+        ));
         assert!(thema_mit_dunkel(&[a], "Adwaita", "gtk-3.0"));
         std::fs::remove_dir_all(&d).unwrap();
-    }
-
-    #[test]
-    fn konfigordner_aus_der_befehlszeile() {
-        let v = |s: &[&str]| s.iter().map(|x| x.to_string()).collect::<Vec<_>>();
-        let home = Path::new("/h/.config");
-        assert_eq!(
-            labwc_konfigordner(&v(&["labwc", "-C", "/h/.config/querencia/labwc"]), home),
-            PathBuf::from("/h/.config/querencia/labwc")
-        );
-        assert_eq!(
-            labwc_konfigordner(&v(&["labwc", "--config-dir=/x"]), home),
-            PathBuf::from("/x")
-        );
-        assert_eq!(
-            labwc_konfigordner(&v(&["labwc", "--config-dir", "/y", "-s", "foot"]), home),
-            PathBuf::from("/y")
-        );
-        assert_eq!(
-            labwc_konfigordner(&v(&["labwc", "-C/z"]), home),
-            PathBuf::from("/z")
-        );
-        assert_eq!(
-            labwc_konfigordner(&v(&["labwc", "-s", "-C"]), home),
-            PathBuf::from("/h/.config/labwc")
-        );
-        assert_eq!(
-            labwc_konfigordner(&v(&["labwc"]), home),
-            PathBuf::from("/h/.config/labwc")
-        );
-    }
-
-    #[test]
-    fn nur_unter_config_home() {
-        let home = Path::new("/h/.config");
-        assert!(ordner_erlaubt(
-            Path::new("/h/.config/querencia/labwc"),
-            home
-        ));
-        assert!(ordner_erlaubt(Path::new("/h/.config/labwc"), home));
-        assert!(!ordner_erlaubt(
-            Path::new("/h/projects/querencia-runtime/session/querencia/labwc"),
-            home
-        ));
-        assert!(!ordner_erlaubt(Path::new("/etc/xdg/labwc"), home));
-        assert!(!ordner_erlaubt(Path::new("relativ/labwc"), home));
-        assert!(!ordner_erlaubt(
-            Path::new("/h/.config/../projekt/labwc"),
-            home
-        ));
-    }
-
-    #[test]
-    fn platzhalter_ist_gueltiges_themerc() {
-        for zeile in THEMERC_DUNKEL.lines() {
-            let (k, v) = zeile.split_once(": ").expect("Schlüssel: Wert");
-            assert!(k.starts_with("window.") || k.starts_with("osd.") || k.starts_with("menu."));
-            assert!(v.starts_with('#') || v == "Solid" || v == "Gradient Vertical");
-        }
     }
 }

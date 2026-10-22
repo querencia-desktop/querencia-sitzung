@@ -138,11 +138,11 @@ QS_LANG=C.UTF-8 QS_RC_XML=<querencia-runtime>/session/querencia/labwc/rc.xml \
     Kästchen, Fall t12/t13) ist so nachgestellt. Abhilfe sind weitere
     Schriften im System (etwa Noto CJK), nicht die `rc.xml`.
 
-## Dunkelmodus für GTK 3 und die labwc-Rahmen (0.1.5)
+## Dunkelmodus für fremde GTK-3-Programme (0.1.5)
 
 ```bash
 QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-gtk3-messung.sh 1 150 # Messung m1–m10
-QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-fremd-dunkel.sh 1 240  # F01–F13, 21 Fälle
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-fremd-dunkel.sh 1 240  # F01–F14
 ```
 
 - Beide Szenarien laufen mit dem Portal-Ersatz (`QS_PORTAL=1`); das
@@ -160,13 +160,12 @@ QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-fremd-dunkel.sh 1 240  # 
   - `gtk-theme` folgt live, mit und ohne Portal (m8, m9); `Thema:dark`
     kennt GTK 3 nicht (m7).
 - **Fremde Programme dunkel:**
-  - Der Leerlaufdienst (`--leerlauf 600`) läuft im isolierten labwc;
-    dessen Konfigordner liegt im Profil, also unter `$XDG_CONFIG_HOME`.
-  - `settings.ini` und `themerc-override` beginnen mit fremden Zeilen, die
-    byte-gleich bleiben müssen.
-  - Fotos: ein `foot`-Fenster mit Serverdekoration für die Titelleiste
-    (`rahmenfarbe.py`), ein GTK-3-Fenster (`grundfarbe.py`, 400×120).
-  - Weitere Fälle: Thema ohne Dunkelfassung, Start bei dunkel, Dateien nur
+  - Der Leerlaufdienst (`--leerlauf 600`) läuft im isolierten labwc.
+  - `settings.ini` beginnt mit fremden Zeilen, die byte-gleich bleiben
+    müssen.
+  - Gegenprobe labwc: Ein fremdes `themerc-override` im Konfigordner des
+    isolierten labwc bleibt byte-gleich, es entsteht keine neue Datei, das
+    Protokoll nennt kein SIGHUP, die Titelleiste bleibt bei dunkel hell
+    (`rahmenfarbe.py`).
+  - Weitere Fälle: Thema ohne Dunkelfassung, Start bei dunkel, Datei nur
     mit Block, Verweis, beschädigter Block, ScreenSaver antwortet weiter.
-- Grenze: Die Titelknöpfe sind PNG des Themas (heller Kasten) und bleiben
-  auch dunkel hell; `themerc-override` kann keine Bilder tauschen.
