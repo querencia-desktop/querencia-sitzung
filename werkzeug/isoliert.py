@@ -32,7 +32,9 @@ def _labwc() -> str:
 
 LABWC = _labwc()
 HIER = os.path.dirname(os.path.abspath(__file__))
-LAUFZEIT = os.path.join(os.path.dirname(HIER), "laufzeit")
+# QS_LAUFZEIT: kürzerer Ordner für die Laufzeitordner, wenn der Pfad des
+# Repos zu lang für den Wayland-Socket ist (sun_path, 108 Zeichen).
+LAUFZEIT = os.environ.get("QS_LAUFZEIT") or os.path.join(os.path.dirname(HIER), "laufzeit")
 
 
 def _session_labwc(pid: str) -> bool:
@@ -74,8 +76,13 @@ def main() -> int:
         os.makedirs(os.path.join(profile, sub), exist_ok=True)
     rc = os.path.join(profile, "config/labwc/rc.xml")
     if not os.path.exists(rc):
-        with open(rc, "w") as f:
-            f.write(RC_XML)
+        # QS_RC_XML: eine fertige rc.xml (z. B. die Vorgabe der Sitzung aus
+        # querencia-runtime, QD-123) statt der kleinen Prüf-rc.xml.
+        if os.environ.get("QS_RC_XML"):
+            shutil.copyfile(os.environ["QS_RC_XML"], rc)
+        else:
+            with open(rc, "w") as f:
+                f.write(RC_XML)
     theme = os.path.join(profile, "data/themes/Querencia-Klassisch")
     live_theme = os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"),
                               "themes/Querencia-Klassisch")
@@ -129,13 +136,21 @@ def main() -> int:
         "XKB_DEFAULT_LAYOUT": "de",
         "GDK_DEBUG": "no-portals",
         "GTK_USE_PORTAL": "0",
-        "LANG": "en_US.UTF-8",
+        # QS_LANG: Locale von labwc und Szenario (live läuft labwc mit
+        # C.UTF-8; die Schriftauswahl von fontconfig hängt an der Sprache).
+        "LANG": os.environ.get("QS_LANG") or "en_US.UTF-8",
         "LANGUAGE": os.environ.get("LANGUAGE") or "de",
         "QS_PROFILE": profile,
         # Sicherheitsnetz: in der isolierten Prüfung nie Neustart,
         # Herunterfahren oder labwc --exit ausführen.
         "QS_TROCKENLAUF": "1",
     })
+    # QS_PORTAL=1 (Dunkel-Prüfung, QD-109): GTK fragt das Settings-Portal;
+    # den Namen belegt im Lauf portal-ersatz.py mit den gsettings des
+    # Profils. Die echten Portale bleiben gesperrt (Masken oben).
+    if os.environ.get("QS_PORTAL") == "1":
+        for k in ("GDK_DEBUG", "GTK_USE_PORTAL"):
+            env.pop(k)
     log = open(os.path.join(profile, "logs", f"lauf-{time.strftime('%Y%m%d-%H%M%S')}.log"), "w")
     cmd = ["dbus-run-session", "--", LABWC, "-C", os.path.join(profile, "config/labwc"),
            "-s", f"/bin/bash {script}"]

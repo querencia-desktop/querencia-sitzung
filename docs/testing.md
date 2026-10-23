@@ -92,3 +92,187 @@ QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-g2ai-abmelden.sh 1 60   #
     Benutzerprogramm.
 - Ohne Eingabegerät hat der headless labwc keine Tastatur am Sitz, dann wird
   kein Fenster aktiv. `eingabe.sh` steckt eine virtuelle Tastatur an.
+
+## ScreenSaver-Dienst, Dunkelmodus, Emoji im Titel (0.1.4)
+
+Liegt das Repo so tief, dass der Pfad des Wayland-Sockets länger als 108
+Zeichen wird (labwc: „File name too long“), setzt `QS_LAUFZEIT` einen
+kürzeren Ordner für die Laufzeitordner, z. B. `QS_LAUFZEIT=~/.cache/qs`.
+
+```bash
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-schoner.sh 1 330   # S01–S15, ca. 2 min
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-dunkel.sh 1 200    # 8 Fälle, ca. 30 s
+QS_LANG=C.UTF-8 QS_RC_XML=<querencia-runtime>/session/querencia/labwc/rc.xml \
+    QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-emoji.sh 1 150 # 11 Titel, Fotos
+```
+
+- **ScreenSaver (S01–S15):**
+  - Alles läuft am Wegwerf-Bus von `dbus-run-session`. Das Szenario bricht
+    ab, wenn `DBUS_SESSION_BUS_ADDRESS` auf `/run/user/` zeigt.
+  - Der Leerlauf beträgt 8 s.
+  - `werkzeug/schoner-client.py` hält Hemmungen über seine eigene
+    Busverbindung. `busctl --user` ruft die übrigen Methoden.
+    `gdbus monitor` zeichnet `ActiveChanged` auf.
+  - S14 startet `xdg-desktop-portal-gtk` im Wegwerf-Bus. Es hemmt über
+    `org.freedesktop.impl.portal.Inhibit` (Flag 8, Leerlauf) und hebt mit
+    `Request.Close` wieder auf.
+  - Belege: `schoner-busctl.txt`, `schoner-monitor.txt`,
+    `schoner-dienst.log`, `schoner-portal.log`.
+- **Dunkelmodus:** `gui-pruefung.sh` setzt für dieses Szenario `QS_PORTAL=1`.
+  - GTK fragt dann das Settings-Portal. Den Namen belegt
+    `werkzeug/portal-ersatz.py` mit den gsettings des Wegwerfprofils.
+  - Das Thema ist die Live-Ablage Querencia-Klassisch, nur gelesen und als
+    Link eingebunden.
+  - `werkzeug/grundfarbe.py` misst im Foto Grund- und Schriftfarbe um die
+    Bildmitte und den Kontrast nach WCAG 2 (Soll ≥ 4,5:1).
+- **Emoji im Titel:** Für jeden Titel aus `werkzeug/emoji-titel.py` öffnet
+  das Szenario ein `foot`-Fenster mit Serverdekoration.
+  `werkzeug/titelleisten.py` stapelt die Titelleisten zu einem Bild.
+  - Grenze: labwc zeichnet Titel mit Pango und dem Fallback von
+    fontconfig. Kästchen mit Hex-Ziffern erscheinen für Zeichen, die keine
+    installierte Schrift hat. Auf der Entwicklungs-VM (nur DejaVu, FreeFont,
+    Noto Color Emoji) sind das ganze Schriften: CJK (Chinesisch, Japanisch,
+    Koreanisch), Vollbreite-Formen (U+FF00–U+FFEF), dazu Teile von Arabisch
+    (Darstellungsformen-A, z. B. U+FDFD, Extended-B), Symbols for Legacy
+    Computing und Private Use. Der Befund vom 22.10. („4K #“ und rund 20
+    Kästchen, Fall t12/t13) ist so nachgestellt. Abhilfe sind weitere
+    Schriften im System (etwa Noto CJK), nicht die `rc.xml`.
+
+## Dunkelmodus für fremde GTK-3-Programme (0.1.5)
+
+```bash
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-gtk3-messung.sh 1 150 # Messung m1–m10
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-fremd-dunkel.sh 1 240  # F01–F14
+```
+
+- Beide Szenarien laufen mit dem Portal-Ersatz (`QS_PORTAL=1`); das
+  Farbschema schalten sie über die gsettings des Wegwerfprofils.
+- **Messung GTK 3:** `werkzeug/gtk3-fenster.py` öffnet ein GTK-3-Fenster
+  über ctypes (`libgtk-3.so.0`; GTK-3-Introspection und `gtk3-demo` fehlen
+  auf der VM) und meldet `gtk-theme-name`,
+  `gtk-application-prefer-dark-theme` und die Themenfarben. Befund:
+  - Portal-Farbschema allein: hell (m2).
+  - `settings.ini` mit `prefer-dark` beim Start: dunkel, Kontrast 8,1:1
+    (m3).
+  - `settings.ini` erst im Lauf geschrieben: hell, auch nach einem
+    Themenwechsel (m4, m10).
+  - Ein zweites `[Settings]` am Dateiende geht früheren Einträgen vor (m6).
+  - `gtk-theme` folgt live, mit und ohne Portal (m8, m9); `Thema:dark`
+    kennt GTK 3 nicht (m7).
+- **Fremde Programme dunkel:**
+  - Der Leerlaufdienst (`--leerlauf 600`) läuft im isolierten labwc.
+  - `settings.ini` beginnt mit fremden Zeilen, die byte-gleich bleiben
+    müssen.
+  - Gegenprobe labwc: Ein fremdes `themerc-override` im Konfigordner des
+    isolierten labwc bleibt byte-gleich, es entsteht keine neue Datei, das
+    Protokoll nennt kein SIGHUP, die Titelleiste bleibt bei dunkel hell
+    (`rahmenfarbe.py`).
+  - Weitere Fälle: Thema ohne Dunkelfassung, Start bei dunkel, Datei nur
+    mit Block, Verweis, beschädigter Block, ScreenSaver antwortet weiter,
+    eigener Eintrag des Benutzers gilt (F15).
+- **Integration:** `probe-015.sh` prüft zusätzlich (7a–7g), dass `zurueck`
+  genau den verwalteten Block aus `settings.ini` nimmt: Fehlte die Datei,
+  ist sie danach weg; fremder Inhalt ist byte-gleich zur Sicherung von
+  `aktivieren`; Fehler rollen auch die Datei zurück; Verweis und
+  beschädigter Block bleiben unberührt.
+
+## Bildschirm aus nach der Sperre (0.1.6)
+
+```bash
+QS_BIN=<binary> bash werkzeug/gui-pruefung.sh szenario-bildschirm.sh 1 300   # B01–B15, ca. 2 min
+```
+
+- Wegwerf-Bus wie beim ScreenSaver-Szenario; das Szenario bricht ab, wenn
+  der Bus unter `/run/user/` liegt.
+- `sitzung.ini` des Profils mit `[Sperre]` `BildschirmAus=4`; der
+  Leerlaufdienst sperrt selbst erst nach 300 s, gesperrt wird über
+  `org.freedesktop.ScreenSaver.Lock` bzw. wie vom Tastenkürzel.
+- Ob der Ausgang an ist, misst `grim -o HEADLESS-1`: Ein abgeschalteter
+  Ausgang lässt sich nicht fotografieren. labwc bestätigt den Wechsel an
+  die Steuerung des Dienstes („Ausgang meldet aus“). wlr-output-management
+  meldet ihn nicht: labwc schickt dabei kein neues `enabled` (gemessen).
+- Fälle: aus nach 4 s, Eingabe → an (Sperrbildschirm sichtbar), wieder
+  aus, Entsperren, entsperrt nie aus, Hemmung hält an, UnInhibit zählt von
+  vorn, neue Hemmung → an, SimulateUserActivity, Sperre vom Tastenkürzel,
+  `BildschirmAus=0`, Vorgabe 120 s ohne Datei.
+- NOT TESTED: Wayland-Hemmung (idle-inhibit) eines Videoprogramms, echte
+  Monitore (DPMS) statt headless.
+
+## Dialog „Herunterfahren“ mit „Neu starten“ (0.1.7)
+
+```bash
+QS_BIN=<binary> QS_SPRACHE=de QS_GROESSE=1024x768 \
+    bash werkzeug/gui-pruefung.sh szenario-herunterfahren.sh 1 240   # H01–H12, ca. 1 min
+```
+
+- Reihenfolge Abbrechen, Neu starten, Herunterfahren. Den Fokus hat
+  „Abbrechen“, Vorgabeknopf (GTK-Standardwidget) und Countdown-Ziel ist
+  „Herunterfahren“; „Neu starten“ löst sofort aus, auch während eines
+  Countdowns.
+- Neu starten und Herunterfahren fragen hier nicht das echte logind:
+  `werkzeug/logind-ersatz.py` belegt `org.freedesktop.login1` auf einem
+  Wegwerf-Systembus im isolierten Laufzeitordner
+  (`DBUS_SYSTEM_BUS_ADDRESS`), antwortet auf `CanReboot`/`CanPowerOff` mit
+  `yes` und schreibt jeden Aufruf nach `nachweis/gui/h-logind-ersatz.log`.
+  Das Szenario bricht ab, wenn ein gestarteter Dialog einen anderen
+  Systembus hat; `QS_TROCKENLAUF=1` gilt zusätzlich, `Reboot`/`PowerOff`
+  dürfen nie ankommen (H12).
+- H01 (Maus) läuft nur bei 1280×720 (Vorgabe von `QS_GROESSE`); die
+  Koordinaten sind je Sprache im Foto gemessen.
+- Fotos hell und dunkel (Settings-Portal-Ersatz wie beim Dunkelmodus) als
+  `h02-hell-…`, `h11-dunkel-…`, `h08-countdown-…` je Sprache und Größe.
+- `szenario-dialog.sh` D12 wählt seit 0.1.7 „Herunterfahren“ mit zweimal
+  Pfeil rechts (läuft nur mit `QS_OHNE_SYSTEM=0`).
+
+## polkit-Agent nach einem Neustart von polkitd (0.1.8)
+
+```bash
+QS_BIN=<ordner>/querencia-sitzung QS_LAUFZEIT=~/.cache/qs \
+    bash werkzeug/gui-pruefung.sh szenario-polkit-neustart.sh 1 200   # N01–N09, ca. 1 min
+```
+
+Der Agent liegt neben der Binary (`QS_AGENT` setzt ihn ausdrücklich). Das
+Szenario startet einen eigenen Wegwerf-Systembus (`dbus-daemon` im
+isolierten `XDG_RUNTIME_DIR`) und darauf `werkzeug/polkitd-attrappe.py`; der
+Agent bekommt `DBUS_SYSTEM_BUS_ADDRESS` dorthin und `XDG_SESSION_ID=q1`. Das
+Szenario bricht ab, wenn der Agent einen anderen Systembus sieht. Echtes
+polkitd und echte logind-Sitzung bleiben unberührt; das Szenario läuft
+deshalb auch mit `QS_OHNE_SYSTEM=1` (Vorgabe) in der Regression.
+
+- **Attrappe:** nimmt Registrierungen an wie polkitd (je Subjekt ein Agent),
+  `SIGUSR1` schickt eine Prüfanfrage (`BeginAuthentication`), `SIGUSR2` gibt
+  den Namen ab bzw. nimmt ihn wieder, `--verweigern N` und `--schweigen N`
+  lassen die ersten Registrierungen scheitern bzw. unbeantwortet.
+- **Prüfanfrage:** Identität `nobody` (uid 65534, gesperrtes Systemkonto
+  ohne Passwort). Der Helfer `polkit-agent-helper-1` fragt nur nach dem
+  Passwort; Esc bricht ab, bevor etwas eingegeben ist. Ein Konto, das es gar
+  nicht gibt, lehnt libpolkit-agent-1 schon vor dem Dialog ab.
+- **N01** erste Registrierung, **N02** Anfrage, Esc, Antwort `Cancelled`.
+- **N03** derselbe Prozess gibt den Namen ab und nimmt ihn wieder: „polkitd
+  beendet“, dann „polkitd neu gestartet, erneut registriert“; **N04**
+  Anfrage danach.
+- **N05** Attrappe endet, eine neue verweigert die ersten beiden
+  Registrierungen: Versuch 3 gelingt, gemessene Abstände ca. 500 und
+  1000 ms; **N06** Anfrage danach.
+- **N07** eine offene Anfrage wird beim Ende von polkitd verworfen (Dialog
+  zu); der nächste polkitd antwortet einmal nicht: Zeitgrenze 5 s, Versuch 2
+  gelingt; **N08** Anfrage danach.
+- **N09** ein Agent-Prozess durchgehend, vier Registrierungen mit gleichem
+  Subjekt (`unix-session:session-id=q1`) und gleicher Locale.
+- Belege in `nachweis/gui/`: `n-agent.log`, `n-polkitd.log`,
+  `n02-vorher.png`, `n04-nach-rueckgabe.png`, `n06-nach-neustart.png`,
+  `n07-offen.png`, `n07-verworfen.png`, `n08-nach-zeitgrenze.png`.
+
+## Grafikprüfung für den Sitzungsstarter (0.1.8)
+
+`querencia-sitzung --grafik-pruefen` legt ohne Fenster einen GLES-Kontext
+an (EGL, Plattform surfaceless) und gibt `renderer=`, `vendor=`, `version=`,
+`treiber=`, `egl=` und `dauer-ms=` aus; Exit 1 mit Meldung, wenn kein
+Kontext entsteht. Unit-Test `grafik::tests` liest nur. Gemessen auf der
+Entwicklungs-VM (RTX 3060, nouveau, zink auf NVK): 250–290 ms je Aufruf,
+fast alles in `eglInitialize` (Start von zink auf NVK); der Vulkan-Loader
+mit nur dem NVK-Treiber ist nicht schneller. Der Starter
+(`querencia-runtime`, `session/querencia-session`) ruft es deshalb im
+Hintergrund während des Aufräumens auf und nur, wenn ein Render-Knoten den
+Kerneltreiber nouveau hat; Prüfung des Starters: Runtime
+`integration/session-grafik/probe-grafik.sh`.

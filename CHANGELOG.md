@@ -1,5 +1,145 @@
 # Änderungen
 
+## 0.1.8 – 2026-10-23
+
+polkit-Agent nach einem Neustart von polkitd (QD-156):
+
+- Startet polkitd neu (needrestart nach einem Update), kannte der neue
+  polkitd den Agenten nicht; Anfragen scheiterten ohne Dialog. Der Agent
+  beobachtet jetzt auf dem System-Bus `NameOwnerChanged` für
+  `org.freedesktop.PolicyKit1` und registriert sich beim neuen Besitzer
+  erneut, mit demselben Subjekt und derselben Locale wie beim Start.
+  Protokollzeile „polkitd neu gestartet, erneut registriert“.
+- Antwortet der neue polkitd noch nicht (Fehler oder 5 s ohne Antwort),
+  wiederholt der Agent nach 0,5, 1, 2, 4, 8 und 15 s, dann alle 30 s, bis
+  zu 12 Versuche.
+- Eine offene Anfrage des alten polkitd wird verworfen, der Dialog
+  schließt.
+- Prüfwerkzeug: `szenario-polkit-neustart.sh` (N01–N09) mit
+  `polkitd-attrappe.py` auf einem Wegwerf-Systembus; Doku
+  `docs/polkit-agent.md`.
+
+Grafikprüfung für den Sitzungsstarter (QD-169):
+
+- `querencia-sitzung --grafik-pruefen` gibt den OpenGL-Renderer aus, ohne
+  Fenster (EGL surfaceless, GLES-Kontext, libEGL per `dlopen`). Der
+  Sitzungsstarter der Runtime (`session/grafik-1`) schaltet damit bei zink
+  auf NVK (nouveau) Software-OpenGL für die Sitzung ein.
+
+## 0.1.7 – 2026-10-23
+
+Dialog „Herunterfahren“ mit „Neu starten“:
+
+- `--herunterfahren` (Panel → System → „Ausschalten …“) bietet wie in
+  GNOME 2 auch „Neu starten“ an. Reihenfolge: Abbrechen, Neu starten,
+  Herunterfahren. Den Fokus hat weiter „Abbrechen“; Herunterfahren ist der
+  Vorgabeknopf und das Ziel eines Countdowns. „Neu starten“ löst sofort den
+  Neustart aus, über denselben logind-Weg wie `--neustart`
+  (`CanReboot`, dann `Reboot` mit interactive=true).
+- Frage „Shut down or restart this system now?“ bzw. „Möchten Sie den
+  Rechner jetzt herunterfahren oder neu starten?“. Die Zugriffstasten sind
+  verschieden (de A/t/H, en C/R/S).
+- Bereitschaft und Ruhezustand sind nicht dabei.
+- Prüfwerkzeug: `szenario-herunterfahren.sh` (H01–H12) mit
+  `logind-ersatz.py` auf einem Wegwerf-Systembus.
+
+## 0.1.6 – 2026-10-22
+
+Bildschirm aus nach der Sperre:
+
+- Ist die Sitzung gesperrt und kommt `BildschirmAus` lang keine Eingabe,
+  schaltet der Leerlaufdienst alle Ausgänge über
+  wlr-output-power-management ab (labwc 0.9.8 bietet
+  `zwlr_output_power_manager_v1`). Eine Eingabe (Maus, Taste) schaltet sie
+  sofort wieder an, ebenso das Entsperren. Ohne weitere Eingabe gehen sie
+  nach derselben Zeit wieder aus.
+- Einstellung in `~/.config/querencia/sitzung.ini`: `[Sperre]`
+  `BildschirmAus=` in Sekunden (`120`, `120s`) oder Minuten (`2min`);
+  `0` = nie. Ohne Eintrag gelten 120 s.
+- Gilt eine Hemmung über `org.freedesktop.ScreenSaver` (Video), bleiben die
+  Ausgänge an; eine neue Hemmung schaltet sie an, fällt die letzte weg,
+  zählt die Zeit von vorn. `SimulateUserActivity` schaltet sie ebenfalls
+  an. Wayland-Hemmungen (idle-inhibit) wertet labwc selbst aus.
+- Auch eine Sperre vom Tastenkürzel zählt; der Dienst bemerkt sie nach
+  höchstens 5 s.
+- Neue Abhängigkeit `wayland-protocols-wlr` 0.3 (MIT).
+- Prüfwerkzeug: `szenario-bildschirm.sh` (B01–B15).
+
+## 0.1.5 – 2026-10-22
+
+Dunkelmodus für fremde GTK-3-Programme (QD-103):
+
+- Der Leerlaufdienst schaltet bei `dunkel_aktiv` mit: Farbschema
+  `prefer-dark` (gsettings `org.gnome.desktop.interface color-scheme`)
+  und ein GTK-Thema mit `gtk-4.0/gtk-dark.css`, wie Panel und
+  Einstellungen. Er gleicht beim Start ab und bei jedem Wechsel von
+  Farbschema oder Thema.
+- GTK 3.24 kennt das Farbschema des Portals nicht und liest
+  `gtk-application-prefer-dark-theme` nur beim Start aus
+  `~/.config/gtk-3.0/settings.ini` (isoliert gemessen,
+  `nachweis/015-gtk3-messung`). Die Sitzung setzt dort einen
+  gekennzeichneten Block mit `[Settings]` und
+  `gtk-application-prefer-dark-theme=true`, nur wenn das Thema
+  `gtk-3.0/gtk-dark.css` hat. Laufende GTK-3-Programme wechseln erst beim
+  nächsten Start.
+- Bei „hell“ fällt der Block wieder weg. Fremde Zeilen bleiben byte-gleich;
+  eine Datei, die nur aus dem Block bestand, wird entfernt. Verweise
+  (Symlinks) und Dateien mit beschädigtem Block bleiben unberührt, das
+  Protokoll nennt sie.
+- Setzt der Benutzer `gtk-application-prefer-dark-theme` in `[Settings]`
+  selbst, gilt sein Eintrag: Die Sitzung schreibt dann keinen Block (kein
+  zweiter Eintrag, der ihn überstimmt) und nennt das im Protokoll.
+- Die labwc-Fensterrahmen schaltet die Sitzung nicht. Ein Entwurf mit
+  `themerc-override` ist wieder ausgebaut (Entscheidung der Startsession,
+  22.10.2026): Er konnte die Titelknöpfe (PNG des Themas) nicht tauschen.
+  Ein dunkles labwc-Thema wählen die Einstellungen in `rc.xml`.
+- Prüfwerkzeug: `szenario-gtk3-messung.sh` (Messung GTK 3, Fälle m1–m10),
+  `szenario-fremd-dunkel.sh` (F01–F14), `gtk3-fenster.py` (GTK-3-Fenster
+  über ctypes, ohne GObject-Introspection), `rahmenfarbe.py`
+  (Titelleiste im Foto).
+
+## 0.1.4 – 2026-10-22
+
+Bildschirmschoner-Dienst, Dunkelmodus der Dialoge (QD-104, QD-109, QD-123):
+
+- Der Leerlaufdienst bietet `org.freedesktop.ScreenSaver` auf dem
+  Sitzungsbus an (an `/org/freedesktop/ScreenSaver` und `/ScreenSaver`).
+  Browser und Player halten damit die Leerlaufsperre an, direkt oder über
+  `xdg-desktop-portal-gtk`. Das Portal meldete bisher etwa alle 10 s
+  „Backend call failed“.
+  - `Inhibit`/`UnInhibit`: Solange ein Cookie gilt, sperrt der Leerlauf
+    nicht. Fällt das letzte weg, zählt der Leerlauf von vorn. Ein Cookie
+    hebt nur auf, wer es geholt hat. Verlässt ein Programm den Bus,
+    fallen seine Cookies weg. Je Programm höchstens 64.
+  - `Lock` und `SetActive(true)` sperren sofort. `SetActive(false)`
+    entsperrt nicht und liefert `false`.
+  - `GetActive`, `GetActiveTime` und das Signal `ActiveChanged` folgen dem
+    Sperrbildschirm, auch dem vom Tastenkürzel (der wird spätestens nach
+    5 s bemerkt).
+  - `SimulateUserActivity` zählt den Leerlauf von vorn.
+  - `org.gnome.SessionManager` bietet die Sitzung bewusst nicht an. Mit
+    einem Besitzer dieses Namens schaltet das Portal auf den GNOME-Weg um
+    und erwartet die ganze Sitzungsverwaltung von gnome-session.
+  - Der Leerlaufdienst läuft dafür in einer GLib-Hauptschleife
+    (neue Abhängigkeit `glib-unix`). Einen eigenen Autostart braucht der
+    Dienst nicht, er kommt mit dem Leerlaufdienst.
+- Dialog „Sitzung beenden“, Rückfragen und polkit-Agent folgen jetzt auch
+  dann dem dunklen Farbschema, wenn es beim Start schon gilt. GTK 4.22
+  zeigte sie in diesem Fall hell, bis das Schema wechselte. Die Dialoge
+  melden die Einstellung `gtk-interface-color-scheme` nach dem Start
+  einmal neu (wie das Panel). Eigene Farben haben sie weiterhin nicht.
+- Kästchen in der labwc-Titelleiste (QD-123): nachgestellt mit „4K #“ und
+  einem Hashtag in Japanisch/Koreanisch oder in Vollbreite-Zeichen. Das
+  System hat keine Schrift für CJK und für Vollbreite-Formen (nur DejaVu,
+  FreeFont, Noto Color Emoji). labwc zeigt dafür Kästchen mit Hex-Ziffern.
+  Emoji (auch Tag-Flaggen, Emoji 17, ZWJ, VS16) und Arabisch mit Emoji
+  erscheinen richtig. Keine Änderung an `rc.xml`; Abhilfe sind weitere
+  Schriften im System, Grenze in `docs/testing.md`.
+- Prüfwerkzeug: Szenarien `szenario-schoner.sh`, `szenario-dunkel.sh`
+  (Portal-Ersatz aus der Dunkel-Prüfung von Screenshot 0.2.10) und
+  `szenario-emoji.sh`; `isoliert.py` kennt `QS_LAUFZEIT`, `QS_PORTAL`,
+  `QS_RC_XML` und `QS_LANG`.
+
 ## 0.1.3 – 2026-10-20
 
 Sauberes Abmelden, Rückfragen ohne Countdown:

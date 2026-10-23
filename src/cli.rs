@@ -6,8 +6,12 @@
 //!                   [--countdown SEK]
 //! querencia-sitzung --sperren [--sofort]
 //! querencia-sitzung --leerlauf MINUTEN | --leerlauf-sekunden SEK
+//! querencia-sitzung --grafik-pruefen
 //! querencia-sitzung --version | --hilfe
 //! ```
+//!
+//! Die Rückfrage zu `--herunterfahren` bietet wie in GNOME 2 auch „Neu
+//! starten“ an (0.1.7); Vorgabe und Countdown bleiben beim Herunterfahren.
 //!
 //! Kein Dialog zählt von selbst herunter: Sie warten, bis jemand wählt
 //! (Entscheidung des Besitzers, 20.10.2026, QD-062). Den Countdown gibt es nur
@@ -55,6 +59,8 @@ pub enum Befehl {
     Leerlauf {
         sekunden: u32,
     },
+    /// OpenGL-Renderer ohne Fenster ausgeben (für den Sitzungsstarter).
+    GrafikPruefen,
     Version,
     Hilfe,
 }
@@ -136,6 +142,7 @@ where
                 leerlauf = Some(zahl(arg, naechstes, LEERLAUF_MAX_MINUTEN * 60)?);
                 i += 1;
             }
+            "--grafik-pruefen" => befehle.push(arg),
             "--version" | "-V" => befehle.push("--version"),
             "--hilfe" | "--help" | "-h" => befehle.push("--hilfe"),
             "--sofort" => sofort = true,
@@ -173,6 +180,7 @@ where
     Ok(match befehl {
         "--version" => Befehl::Version,
         "--hilfe" => Befehl::Hilfe,
+        "--grafik-pruefen" => Befehl::GrafikPruefen,
         "--dialog" => Befehl::Dialog { countdown },
         "--leerlauf" | "--leerlauf-sekunden" => Befehl::Leerlauf {
             sekunden: leerlauf.expect("Leerlaufzeit geparst"),
@@ -220,9 +228,16 @@ Befehle (genau einer):
   --sperren           Bildschirm sperren mit Rückfrage
   --sperren --sofort  Bildschirm sofort sperren (Tastenkürzel, Leerlauf)
   --neustart          Neu starten mit Rückfrage
-  --herunterfahren    Herunterfahren mit Rückfrage
+  --herunterfahren    Herunterfahren mit Rückfrage; der Dialog bietet auch
+                      Neu starten an (Abbrechen, Neu starten, Herunterfahren)
   --leerlauf MIN      Leerlaufdienst: sperrt nach MIN Minuten ohne Eingabe
   --leerlauf-sekunden SEK   dasselbe in Sekunden (für Prüfungen)
+                      Gesperrt schaltet der Leerlaufdienst die Bildschirme
+                      nach 2 min ohne Eingabe ab; ~/.config/querencia/
+                      sitzung.ini mit [Sperre] BildschirmAus=SEK|Nmin, 0 = nie.
+  --grafik-pruefen    OpenGL-Renderer ohne Fenster ausgeben (renderer=…,
+                      vendor=…, dauer-ms=…); fragt der Sitzungsstarter vor
+                      dem Start von labwc (Software-OpenGL bei zink auf NVK)
   --version, --hilfe
 
 Optionen:
@@ -347,7 +362,12 @@ mod tests {
         assert_eq!(p(&["--hilfe"]), Ok(Befehl::Hilfe));
         assert_eq!(p(&["--help"]), Ok(Befehl::Hilfe));
         assert_eq!(p(&["-h"]), Ok(Befehl::Hilfe));
+        assert_eq!(p(&["--grafik-pruefen"]), Ok(Befehl::GrafikPruefen));
+        assert!(p(&["--grafik-pruefen", "--sofort"]).is_err());
+        assert!(p(&["--grafik-pruefen", "--dialog"]).is_err());
+        assert!(HILFE.contains("--grafik-pruefen"));
         assert!(HILFE.contains("--sperren --sofort"));
+        assert!(HILFE.contains("Abbrechen, Neu starten, Herunterfahren"));
     }
 
     #[test]

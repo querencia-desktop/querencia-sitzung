@@ -13,5 +13,23 @@ __pycache__/
 /integration/vorschlag-013/querencia-sitzung
 /integration/vorschlag-013/querencia-polkit-agent
 /integration/vorschlag-013/share/
-# Ausgaben der isolierten GUI-Prüfung
-/nachweis/
+# Vorlage der Integration 0.1.4: Binaries und Katalog nicht ins Repo
+/integration/vorschlag-014/querencia-sitzung
+/integration/vorschlag-014/querencia-polkit-agent
+/integration/vorschlag-014/share/
+# Vorlage der Integration 0.1.5: Binaries und Katalog nicht ins Repo
+/integration/vorschlag-015/querencia-sitzung
+/integration/vorschlag-015/querencia-polkit-agent
+/integration/vorschlag-015/share/
+# Vorlage der Integration 0.1.6: Binaries und Katalog nicht ins Repo
+/integration/vorschlag-016/querencia-sitzung
+/integration/vorschlag-016/querencia-polkit-agent
+/integration/vorschlag-016/share/
+# Vorlage der Integration 0.1.7: Binaries und Katalog nicht ins Repo
+/integration/vorschlag-017/querencia-sitzung
+/integration/vorschlag-017/querencia-polkit-agent
+/integration/vorschlag-017/share/
+# Vorlage der Integration 0.1.8: Binaries und Katalog nicht ins Repo
+/integration/vorschlag-018/querencia-sitzung
+/integration/vorschlag-018/querencia-polkit-agent
+/integration/vorschlag-018/share/

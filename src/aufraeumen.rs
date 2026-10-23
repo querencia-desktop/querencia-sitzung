@@ -208,6 +208,43 @@ pub fn finden(
     gefunden
 }
 
+/// Ob `args` (ohne Programmnamen) der Aufruf des Sperrbildschirms sind.
+pub fn ist_sperre(args: &[String]) -> bool {
+    args.iter().any(|a| a == "--sperren") && args.iter().any(|a| a == "--sofort")
+}
+
+/// PIDs der laufenden Sperrbildschirme (`querencia-sitzung --sperren
+/// --sofort`) der Sitzung von labwc `labwc_pid` unter `proc_root`, ohne
+/// `eigene_pid`; auch die vom Tastenkürzel gestarteten (QD-104,
+/// `GetActive`). Vorauswahl über `comm`, damit nur wenige Prozesse ganz
+/// gelesen werden.
+pub fn sperren_finden(proc_root: &Path, uid: u32, labwc_pid: u32, eigene_pid: u32) -> Vec<u32> {
+    let Ok(eintraege) = std::fs::read_dir(proc_root) else {
+        return Vec::new();
+    };
+    let labwc_text = labwc_pid.to_string();
+    let mut gefunden: Vec<u32> = eintraege
+        .flatten()
+        .filter_map(|e| e.file_name().to_str()?.parse::<u32>().ok())
+        .filter(|pid| *pid != eigene_pid)
+        .filter(|pid| {
+            std::fs::read_to_string(proc_root.join(pid.to_string()).join("comm"))
+                .is_ok_and(|c| "querencia-sitzung".starts_with(c.trim_end()))
+        })
+        .filter(|pid| {
+            lesen(proc_root, *pid).is_some_and(|g| {
+                g.uid == uid
+                    && g.zustand != 'Z'
+                    && g.name == "querencia-sitzung"
+                    && g.labwc.as_deref() == Some(labwc_text.as_str())
+                    && ist_sperre(&g.args)
+            })
+        })
+        .collect();
+    gefunden.sort_unstable();
+    gefunden
+}
+
 /// Ob `p` noch läuft (gleiche Startzeit, kein Zombie).
 fn laeuft(p: &Prozess) -> bool {
     std::fs::read_to_string(format!("/proc/{}/stat", p.pid))
@@ -393,6 +430,18 @@ mod tests {
         ] {
             assert!(!ist_sitzungsprogramm(name, &[]), "{name}");
         }
+    }
+
+    #[test]
+    fn sperre_nur_mit_sofort() {
+        assert!(ist_sperre(&s(&["--sperren", "--sofort"])));
+        assert!(ist_sperre(&s(&["--sofort", "--sperren"])));
+        for args in [vec![], s(&["--sperren"]), s(&["--leerlauf", "10"])] {
+            assert!(!ist_sperre(&args), "{args:?}");
+        }
+        // ohne passende Prozesse: leer, kein Fehler
+        assert!(sperren_finden(Path::new("/proc"), u32::MAX, 1, std::process::id()).is_empty());
+        assert!(sperren_finden(Path::new("/gibt-es-nicht"), 0, 1, 0).is_empty());
     }
 
     #[test]
