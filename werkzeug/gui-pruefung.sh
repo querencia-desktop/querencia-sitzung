@@ -84,6 +84,8 @@ else
     else
         lauf szenario-polkit.sh 1 150
     fi
+    # 0.1.8: polkitd-Attrappe auf Wegwerf-Systembus, auch mit QS_OHNE_SYSTEM=1
+    lauf szenario-polkit-neustart.sh 1 200
     lauf szenario-abmelden.sh 1 60
 fi
 echo

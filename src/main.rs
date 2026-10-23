@@ -6,7 +6,8 @@
 //! Leerlauf: `leerlauf.rs` (ext-idle-notify) mit dem Dienst
 //! `org.freedesktop.ScreenSaver` (`schoner.rs`) und dem Dunkelmodus für
 //! fremde GTK-3-Programme (`mitschalten.rs`) und „Bildschirm aus“ nach der
-//! Sperre (`bildschirm.rs`); Passwort: `pam.rs`.
+//! Sperre (`bildschirm.rs`); Passwort: `pam.rs`; OpenGL-Renderer für den
+//! Sitzungsstarter: `grafik.rs`.
 
 mod aktion;
 mod aufraeumen;
@@ -15,6 +16,7 @@ mod cli;
 mod dialog;
 mod einstellung;
 mod farbschema;
+mod grafik;
 mod i18n;
 mod leerlauf;
 mod mitschalten;
@@ -46,6 +48,7 @@ fn main() {
             print!("{}", cli::HILFE);
             0
         }
+        Befehl::GrafikPruefen => grafik::ausfuehren(),
         Befehl::SperrenSofort => sperre::ausfuehren(),
         Befehl::Leerlauf { sekunden } => leerlauf::ausfuehren(sekunden),
         Befehl::Dialog { .. } | Befehl::Rueckfrage { .. } => {

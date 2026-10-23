@@ -12,9 +12,9 @@ Neu starten, Herunterfahren und Leerlaufsperre, dazu der polkit-Agent
 
 | | |
 |---|---|
-| Version | 0.1.7 (Tags `sitzung/0.1.7`, `sitzung/0.1.7-int`): Dialog „Herunterfahren“ mit „Neu starten“; davor 0.1.6: Bildschirm aus nach der Sperre, 0.1.5: fremde GTK-3-Programme folgen dem Dunkelmodus (QD-103) |
-| Auf der Entwicklungs-VM | 0.1.6 aktiviert am 22.10.2026 21:37 (Dienst ab der nächsten Anmeldung); 0.1.7 wartet auf Freigabe |
-| Letzte Prüfung | 23.10.2026 (0.1.7): fmt, Clippy, 70 + 10 Unit-Tests; Dialog „Herunterfahren“ mit „Neu starten“ (logind-Ersatz auf Wegwerf-Systembus) de/en je 1280×720 13/13, 1024×768 und 1920×1080 je 12/12, hell und dunkel; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Countdown 9/9, Abmelden A01/A02a–e 6/6, Sprache Deutsch und Englisch je 7/7, ScreenSaver-Dienst 15/15, Dunkelmodus 8/8, fremde GTK-3-Programme 21/22 (F05b Prüffehler der Titelschrift-Messung, mit 0.1.6 gleich), Bildschirm aus 18/18 |
+| Version | 0.1.8 (Tag `sitzung/0.1.8`): polkit-Agent registriert sich nach einem Neustart von polkitd erneut (QD-156), `--grafik-pruefen` für den Sitzungsstarter (QD-169); davor 0.1.7: Dialog „Herunterfahren“ mit „Neu starten“, 0.1.6: Bildschirm aus nach der Sperre |
+| Auf der Entwicklungs-VM | 0.1.7 aktiviert am 23.10.2026 00:19; 0.1.8 wartet auf Freigabe |
+| Letzte Prüfung | 23.10.2026 (0.1.8): fmt, Clippy, Unit-Tests, polkitd-Neustart mit Attrappe auf Wegwerf-Systembus 13/13, Bericht ; davor (0.1.7): fmt, Clippy, 70 + 10 Unit-Tests; Dialog „Herunterfahren“ mit „Neu starten“ (logind-Ersatz auf Wegwerf-Systembus) de/en je 1280×720 13/13, 1024×768 und 1920×1080 je 12/12, hell und dunkel; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Countdown 9/9, Abmelden A01/A02a–e 6/6, Sprache Deutsch und Englisch je 7/7, ScreenSaver-Dienst 15/15, Dunkelmodus 8/8, fremde GTK-3-Programme 21/22 (F05b Prüffehler der Titelschrift-Messung, mit 0.1.6 gleich), Bildschirm aus 18/18 |
 | Getestet auf | Ubuntu 26.04, labwc 0.9.8, GTK 4.22 |
 
 Änderungen je Version: [CHANGELOG.md](CHANGELOG.md).
@@ -26,6 +26,7 @@ querencia-sitzung --dialog [--countdown SEK]
 querencia-sitzung --abmelden | --neustart | --herunterfahren [--countdown SEK]
 querencia-sitzung --sperren [--sofort]
 querencia-sitzung --leerlauf MINUTEN | --leerlauf-sekunden SEK
+querencia-sitzung --grafik-pruefen
 querencia-sitzung --version | --hilfe
 ```
 
@@ -38,6 +39,8 @@ querencia-sitzung --version | --hilfe
 | Passwort | PAM über `dlopen("libpam.so.0")` (keine PAM-Entwicklungsdateien auf der VM), Dienst `querencia-sitzung` falls in `/etc/pam.d`, sonst `login` | `src/pam.rs` |
 | Leerlauf | ext-idle-notify-v1, startet `--sperren --sofort`; bietet `org.freedesktop.ScreenSaver` an (Inhibit hält die Sperre an, Lock, GetActive, ActiveChanged), GLib-Hauptschleife | `src/leerlauf.rs`, `src/schoner.rs` |
 | Bildschirm aus | gesperrt und `BildschirmAus` (Vorgabe 120 s, `sitzung.ini` `[Sperre]`, 0 = nie) ohne Eingabe: Ausgänge aus über wlr-output-power-management, Eingabe oder Entsperren schaltet an; ScreenSaver-Hemmung hält an | `src/bildschirm.rs`, `src/leerlauf.rs` |
+| polkit-Agent | `querencia-polkit-agent`: Passwortdialog für polkit, Prüfung über libpolkit-agent-1 und `polkit-agent-helper-1`; registriert sich nach einem Neustart von polkitd erneut (`NameOwnerChanged`, 0.1.8, [docs/polkit-agent.md](docs/polkit-agent.md)) | `src/bin/querencia-polkit-agent.rs` |
+| Grafikprüfung | `--grafik-pruefen`: OpenGL-Renderer ohne Fenster (EGL surfaceless, libEGL per `dlopen`) für den Sitzungsstarter, Software-OpenGL bei zink auf NVK (QD-169) | `src/grafik.rs` |
 | Dunkelmodus | Farben nur aus dem GTK-Thema; Einstellung `gtk-interface-color-scheme` nach dem Start neu melden (GTK-4.22-Startfehler) | `src/farbschema.rs` |
 | Dunkelmodus für GTK 3 | Leerlaufdienst schaltet bei `dunkel_aktiv` fremde GTK-3-Programme mit (verwalteter Block in `~/.config/gtk-3.0/settings.ini`, wirkt beim nächsten Programmstart); fremde Zeilen bleiben; labwc-Rahmen nicht (Sache von Thema und Einstellungen) | `src/mitschalten.rs` |
 

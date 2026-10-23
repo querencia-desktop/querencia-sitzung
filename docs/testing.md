@@ -223,3 +223,56 @@ QS_BIN=<binary> QS_SPRACHE=de QS_GROESSE=1024x768 \
   `h02-hell-…`, `h11-dunkel-…`, `h08-countdown-…` je Sprache und Größe.
 - `szenario-dialog.sh` D12 wählt seit 0.1.7 „Herunterfahren“ mit zweimal
   Pfeil rechts (läuft nur mit `QS_OHNE_SYSTEM=0`).
+
+## polkit-Agent nach einem Neustart von polkitd (0.1.8)
+
+```bash
+QS_BIN=<ordner>/querencia-sitzung QS_LAUFZEIT=~/.cache/qs \
+    bash werkzeug/gui-pruefung.sh szenario-polkit-neustart.sh 1 200   # N01–N09, ca. 1 min
+```
+
+Der Agent liegt neben der Binary (`QS_AGENT` setzt ihn ausdrücklich). Das
+Szenario startet einen eigenen Wegwerf-Systembus (`dbus-daemon` im
+isolierten `XDG_RUNTIME_DIR`) und darauf `werkzeug/polkitd-attrappe.py`; der
+Agent bekommt `DBUS_SYSTEM_BUS_ADDRESS` dorthin und `XDG_SESSION_ID=q1`. Das
+Szenario bricht ab, wenn der Agent einen anderen Systembus sieht. Echtes
+polkitd und echte logind-Sitzung bleiben unberührt; das Szenario läuft
+deshalb auch mit `QS_OHNE_SYSTEM=1` (Vorgabe) in der Regression.
+
+- **Attrappe:** nimmt Registrierungen an wie polkitd (je Subjekt ein Agent),
+  `SIGUSR1` schickt eine Prüfanfrage (`BeginAuthentication`), `SIGUSR2` gibt
+  den Namen ab bzw. nimmt ihn wieder, `--verweigern N` und `--schweigen N`
+  lassen die ersten Registrierungen scheitern bzw. unbeantwortet.
+- **Prüfanfrage:** Identität `nobody` (uid 65534, gesperrtes Systemkonto
+  ohne Passwort). Der Helfer `polkit-agent-helper-1` fragt nur nach dem
+  Passwort; Esc bricht ab, bevor etwas eingegeben ist. Ein Konto, das es gar
+  nicht gibt, lehnt libpolkit-agent-1 schon vor dem Dialog ab.
+- **N01** erste Registrierung, **N02** Anfrage, Esc, Antwort `Cancelled`.
+- **N03** derselbe Prozess gibt den Namen ab und nimmt ihn wieder: „polkitd
+  beendet“, dann „polkitd neu gestartet, erneut registriert“; **N04**
+  Anfrage danach.
+- **N05** Attrappe endet, eine neue verweigert die ersten beiden
+  Registrierungen: Versuch 3 gelingt, gemessene Abstände ca. 500 und
+  1000 ms; **N06** Anfrage danach.
+- **N07** eine offene Anfrage wird beim Ende von polkitd verworfen (Dialog
+  zu); der nächste polkitd antwortet einmal nicht: Zeitgrenze 5 s, Versuch 2
+  gelingt; **N08** Anfrage danach.
+- **N09** ein Agent-Prozess durchgehend, vier Registrierungen mit gleichem
+  Subjekt (`unix-session:session-id=q1`) und gleicher Locale.
+- Belege in `nachweis/gui/`: `n-agent.log`, `n-polkitd.log`,
+  `n02-vorher.png`, `n04-nach-rueckgabe.png`, `n06-nach-neustart.png`,
+  `n07-offen.png`, `n07-verworfen.png`, `n08-nach-zeitgrenze.png`.
+
+## Grafikprüfung für den Sitzungsstarter (0.1.8)
+
+`querencia-sitzung --grafik-pruefen` legt ohne Fenster einen GLES-Kontext
+an (EGL, Plattform surfaceless) und gibt `renderer=`, `vendor=`, `version=`,
+`treiber=`, `egl=` und `dauer-ms=` aus; Exit 1 mit Meldung, wenn kein
+Kontext entsteht. Unit-Test `grafik::tests` liest nur. Gemessen auf der
+Entwicklungs-VM (RTX 3060, nouveau, zink auf NVK): 250–290 ms je Aufruf,
+fast alles in `eglInitialize` (Start von zink auf NVK); der Vulkan-Loader
+mit nur dem NVK-Treiber ist nicht schneller. Der Starter
+(`querencia-runtime`, `session/querencia-session`) ruft es deshalb im
+Hintergrund während des Aufräumens auf und nur, wenn ein Render-Knoten den
+Kerneltreiber nouveau hat; Prüfung des Starters: Runtime
+`integration/session-grafik/probe-grafik.sh`.

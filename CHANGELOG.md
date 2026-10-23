@@ -1,5 +1,31 @@
 # Änderungen
 
+## 0.1.8 – 2026-10-23
+
+polkit-Agent nach einem Neustart von polkitd (QD-156):
+
+- Startet polkitd neu (needrestart nach einem Update), kannte der neue
+  polkitd den Agenten nicht; Anfragen scheiterten ohne Dialog. Der Agent
+  beobachtet jetzt auf dem System-Bus `NameOwnerChanged` für
+  `org.freedesktop.PolicyKit1` und registriert sich beim neuen Besitzer
+  erneut, mit demselben Subjekt und derselben Locale wie beim Start.
+  Protokollzeile „polkitd neu gestartet, erneut registriert“.
+- Antwortet der neue polkitd noch nicht (Fehler oder 5 s ohne Antwort),
+  wiederholt der Agent nach 0,5, 1, 2, 4, 8 und 15 s, dann alle 30 s, bis
+  zu 12 Versuche.
+- Eine offene Anfrage des alten polkitd wird verworfen, der Dialog
+  schließt.
+- Prüfwerkzeug: `szenario-polkit-neustart.sh` (N01–N09) mit
+  `polkitd-attrappe.py` auf einem Wegwerf-Systembus; Doku
+  `docs/polkit-agent.md`.
+
+Grafikprüfung für den Sitzungsstarter (QD-169):
+
+- `querencia-sitzung --grafik-pruefen` gibt den OpenGL-Renderer aus, ohne
+  Fenster (EGL surfaceless, GLES-Kontext, libEGL per `dlopen`). Der
+  Sitzungsstarter der Runtime (`session/grafik-1`) schaltet damit bei zink
+  auf NVK (nouveau) Software-OpenGL für die Sitzung ein.
+
 ## 0.1.7 – 2026-10-23
 
 Dialog „Herunterfahren“ mit „Neu starten“:

@@ -13,6 +13,13 @@
 //! systemd-Socket `polkit-agent-helper.socket`); der Agent prüft nie selbst
 //! gegen PAM.
 //!
+//! Startet polkitd neu (z. B. needrestart nach einem Update, QD-156), kennt
+//! der neue polkitd den Agenten nicht. Der Agent beobachtet darum auf dem
+//! System-Bus `NameOwnerChanged` für `org.freedesktop.PolicyKit1` und
+//! registriert sich beim neuen Besitzer erneut, mit demselben Subjekt und
+//! derselben Locale wie beim Start; antwortet der neue polkitd noch nicht,
+//! wiederholt er mit wachsender Wartezeit (0.1.8).
+//!
 //! Aufruf: `querencia-polkit-agent` (läuft bis zum Sitzungsende; für den
 //! Autostart), `--version`, `--hilfe`.
 
@@ -25,7 +32,7 @@ mod farbschema;
 #[path = "../i18n.rs"]
 mod i18n;
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::ffi::{CString, c_char, c_int, c_void};
 use std::rc::Rc;
 
@@ -37,6 +44,17 @@ const APP_ID: &str = "org.querencia.PolkitAgent";
 const OBJEKT: &str = "/org/querencia/PolkitAgent";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const MAX_VERSUCHE: u32 = 3;
+const POLKIT_NAME: &str = "org.freedesktop.PolicyKit1";
+const POLKIT_PFAD: &str = "/org/freedesktop/PolicyKit1/Authority";
+const POLKIT_SCHNITTSTELLE: &str = "org.freedesktop.PolicyKit1.Authority";
+/// Zeitgrenze eines Registrierungsversuchs beim neuen polkitd.
+const NEU_ZEITGRENZE_MS: i32 = 5000;
+/// Wartezeit vor dem 2., 3., … Versuch, falls der neue polkitd noch nicht
+/// antwortet (zusammen 3 min Wartezeit). Danach ruht der Agent bis zum nächsten
+/// Besitzerwechsel.
+const WIEDERHOLUNG_MS: [u64; 11] = [
+    500, 1000, 2000, 4000, 8000, 15000, 30000, 30000, 30000, 30000, 30000,
+];
 const SCHNITTSTELLE: &str = r#"
 <node>
   <interface name="org.freedesktop.PolicyKit1.AuthenticationAgent">
@@ -777,9 +795,12 @@ fn sitzung_laut_logind(bus: &gio::DBusConnection) -> Option<String> {
     wert.get::<String>().filter(|s| !s.is_empty())
 }
 
-fn registrieren(app: &gtk::Application, polkit: Rc<Polkit>) -> Result<gio::DBusConnection, String> {
-    let bus = gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>)
-        .map_err(|e| format!("System-D-Bus nicht erreichbar: {e}"))?;
+/// Stellt das Objekt `/org/querencia/PolkitAgent` am System-Bus bereit.
+fn objekt_anmelden(
+    app: &gtk::Application,
+    polkit: Rc<Polkit>,
+    bus: &gio::DBusConnection,
+) -> Result<(), String> {
     let info =
         gio::DBusNodeInfo::for_xml(SCHNITTSTELLE).map_err(|e| format!("Schnittstelle: {e}"))?;
     let iface = info
@@ -801,36 +822,273 @@ fn registrieren(app: &gtk::Application, polkit: Rc<Polkit>) -> Result<gio::DBusC
         })
         .build()
         .map_err(|e| format!("Objekt {OBJEKT} nicht registrierbar: {e}"))?;
-    let locale = locale_fuer_polkit(
-        std::env::var("LANGUAGE").ok().as_deref(),
-        std::env::var("LC_ALL")
-            .or_else(|_| std::env::var("LC_MESSAGES"))
-            .or_else(|_| std::env::var("LANG"))
-            .ok()
-            .as_deref(),
-    );
-    let (subjekt, beschreibung) = subjekt(&bus);
-    bus.call_sync(
-        Some("org.freedesktop.PolicyKit1"),
-        "/org/freedesktop/PolicyKit1/Authority",
-        "org.freedesktop.PolicyKit1.Authority",
-        "RegisterAuthenticationAgent",
-        Some(&glib::Variant::tuple_from_iter([
+    Ok(())
+}
+
+/// Alles für `RegisterAuthenticationAgent`, einmal beim Start bestimmt:
+/// jede erneute Registrierung nennt dasselbe Subjekt und dieselbe Locale.
+struct Registrierung {
+    bus: gio::DBusConnection,
+    subjekt: glib::Variant,
+    beschreibung: String,
+    locale: String,
+    /// Eindeutiger Busname des polkitd, bei dem der Agent registriert ist.
+    besitzer: RefCell<Option<String>>,
+    /// Zählt die Besitzerwechsel; ein Versuch aus einer älteren Runde verfällt.
+    runde: Cell<u64>,
+}
+
+impl Registrierung {
+    fn bestimmen(bus: gio::DBusConnection) -> Registrierung {
+        let locale = locale_fuer_polkit(
+            std::env::var("LANGUAGE").ok().as_deref(),
+            std::env::var("LC_ALL")
+                .or_else(|_| std::env::var("LC_MESSAGES"))
+                .or_else(|_| std::env::var("LANG"))
+                .ok()
+                .as_deref(),
+        );
+        let (subjekt, beschreibung) = subjekt(&bus);
+        Registrierung {
+            bus,
             subjekt,
-            locale.to_variant(),
+            beschreibung,
+            locale,
+            besitzer: RefCell::new(None),
+            runde: Cell::new(0),
+        }
+    }
+
+    fn parameter(&self) -> glib::Variant {
+        glib::Variant::tuple_from_iter([
+            self.subjekt.clone(),
+            self.locale.to_variant(),
             OBJEKT.to_variant(),
-        ])),
+        ])
+    }
+
+    fn angaben(&self) -> String {
+        format!(
+            "Subjekt {}, Locale {}, Objekt {OBJEKT}",
+            self.beschreibung, self.locale
+        )
+    }
+
+    /// Eindeutiger Name des jetzigen Besitzers von org.freedesktop.PolicyKit1.
+    fn besitzer_abfragen(&self) -> Option<String> {
+        let antwort = self
+            .bus
+            .call_sync(
+                Some("org.freedesktop.DBus"),
+                "/org/freedesktop/DBus",
+                "org.freedesktop.DBus",
+                "GetNameOwner",
+                Some(&(POLKIT_NAME,).to_variant()),
+                None,
+                gio::DBusCallFlags::NONE,
+                2000,
+                None::<&gio::Cancellable>,
+            )
+            .ok()?;
+        antwort.get::<(String,)>().map(|(n,)| n)
+    }
+
+    /// Erste Registrierung beim Start (polkitd darf dafür starten).
+    fn erstmals(&self) -> Result<(), String> {
+        let vorher = self.besitzer_abfragen();
+        self.bus
+            .call_sync(
+                Some(POLKIT_NAME),
+                POLKIT_PFAD,
+                POLKIT_SCHNITTSTELLE,
+                "RegisterAuthenticationAgent",
+                Some(&self.parameter()),
+                None,
+                gio::DBusCallFlags::NONE,
+                10_000,
+                None::<&gio::Cancellable>,
+            )
+            .map_err(|e| format!("RegisterAuthenticationAgent: {e}"))?;
+        // Lief polkitd noch nicht, hat erst dieser Aufruf ihn gestartet.
+        let besitzer = vorher.or_else(|| self.besitzer_abfragen());
+        protokoll(&format!(
+            "registriert bei polkitd (PID {}, {}, polkitd {})",
+            std::process::id(),
+            self.angaben(),
+            besitzer.as_deref().unwrap_or("?")
+        ));
+        *self.besitzer.borrow_mut() = besitzer;
+        Ok(())
+    }
+}
+
+/// Was ein `NameOwnerChanged` für org.freedesktop.PolicyKit1 bedeutet.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Wechsel {
+    /// Der Besitzer ist der, bei dem der Agent registriert ist.
+    Bekannt,
+    /// polkitd ist weg, noch kein neuer.
+    Beendet,
+    /// Ein neuer polkitd; `vorgaenger`: der alte ist dabei verschwunden.
+    Neu { vorgaenger: bool },
+}
+
+pub fn wechsel_bewerten(registriert_bei: Option<&str>, alt: &str, neu: &str) -> Wechsel {
+    if neu.is_empty() {
+        Wechsel::Beendet
+    } else if registriert_bei == Some(neu) {
+        Wechsel::Bekannt
+    } else {
+        Wechsel::Neu {
+            vorgaenger: !alt.is_empty(),
+        }
+    }
+}
+
+/// Wartezeit nach dem fehlgeschlagenen Versuch `versuch` (ab 1); `None`:
+/// keine weitere Wiederholung.
+pub fn wartezeit(versuch: usize) -> Option<u64> {
+    versuch
+        .checked_sub(1)
+        .and_then(|i| WIEDERHOLUNG_MS.get(i))
+        .copied()
+}
+
+/// polkitd lehnt eine zweite Registrierung für dasselbe Subjekt ab
+/// („An authentication agent already exists for the given subject“).
+pub fn schon_registriert(fehler: &str) -> bool {
+    fehler.contains("already exists")
+}
+
+/// Eine offene Anfrage gehört zum alten polkitd; der neue kennt ihr Cookie
+/// nicht.
+fn offene_anfrage_verwerfen(polkit: &Polkit) {
+    if let Some(anfrage) = OFFEN.with(|o| o.borrow().clone()) {
+        abbrechen(polkit, &anfrage, "polkitd beendet");
+    }
+}
+
+fn besitzerwechsel(reg: &Rc<Registrierung>, polkit: &Polkit, alt: &str, neu: &str) {
+    let bisher = reg.besitzer.borrow().clone();
+    match wechsel_bewerten(bisher.as_deref(), alt, neu) {
+        Wechsel::Bekannt => {}
+        Wechsel::Beendet => {
+            reg.runde.set(reg.runde.get() + 1);
+            *reg.besitzer.borrow_mut() = None;
+            protokoll(&format!(
+                "polkitd beendet (Besitzer {}), warte auf den neuen",
+                if alt.is_empty() { "?" } else { alt }
+            ));
+            offene_anfrage_verwerfen(polkit);
+        }
+        Wechsel::Neu { vorgaenger } => {
+            reg.runde.set(reg.runde.get() + 1);
+            *reg.besitzer.borrow_mut() = None;
+            protokoll(&format!(
+                "neuer polkitd {neu} (vorher {}), registriere erneut",
+                if alt.is_empty() { "keiner" } else { alt }
+            ));
+            if vorgaenger {
+                offene_anfrage_verwerfen(polkit);
+            }
+            erneut_registrieren(reg, reg.runde.get(), 1, neu.to_string());
+        }
+    }
+}
+
+/// Ein Versuch beim neuen polkitd `ziel`; nur solange die Runde gilt.
+fn erneut_registrieren(reg: &Rc<Registrierung>, runde: u64, versuch: usize, ziel: String) {
+    if reg.runde.get() != runde {
+        return;
+    }
+    let reg2 = reg.clone();
+    // NO_AUTO_START: der neue polkitd hat den Namen schon; ist er inzwischen
+    // wieder weg, zählt ohnehin die nächste Runde.
+    reg.bus.call(
+        Some(POLKIT_NAME),
+        POLKIT_PFAD,
+        POLKIT_SCHNITTSTELLE,
+        "RegisterAuthenticationAgent",
+        Some(&reg.parameter()),
         None,
-        gio::DBusCallFlags::NONE,
-        10_000,
+        gio::DBusCallFlags::NO_AUTO_START,
+        NEU_ZEITGRENZE_MS,
         None::<&gio::Cancellable>,
+        move |ergebnis| {
+            if reg2.runde.get() != runde {
+                return;
+            }
+            match ergebnis {
+                Ok(_) => {
+                    protokoll(&format!(
+                        "polkitd neu gestartet, erneut registriert (polkitd {ziel}, Versuch {versuch}, {})",
+                        reg2.angaben()
+                    ));
+                    *reg2.besitzer.borrow_mut() = Some(ziel);
+                }
+                Err(e) if schon_registriert(&e.to_string()) => {
+                    protokoll(&format!(
+                        "polkitd {ziel} kennt schon einen Agenten für {} ({e}); keine weitere Wiederholung",
+                        reg2.beschreibung
+                    ));
+                    *reg2.besitzer.borrow_mut() = Some(ziel);
+                }
+                Err(e) => match wartezeit(versuch) {
+                    Some(ms) => {
+                        protokoll(&format!(
+                            "polkitd {ziel} antwortet noch nicht (Versuch {versuch}: {e}), nächster Versuch in {ms} ms"
+                        ));
+                        let reg3 = reg2.clone();
+                        glib::timeout_add_local_once(
+                            std::time::Duration::from_millis(ms),
+                            move || erneut_registrieren(&reg3, runde, versuch + 1, ziel),
+                        );
+                    }
+                    None => protokoll(&format!(
+                        "erneute Registrierung bei polkitd {ziel} nach {versuch} Versuchen aufgegeben ({e}); erst der nächste Besitzerwechsel versucht es wieder"
+                    )),
+                },
+            }
+        },
+    );
+}
+
+/// Beobachtet den Besitzer von org.freedesktop.PolicyKit1. Das Abo gilt,
+/// solange der Rückgabewert lebt.
+fn wache_einrichten(reg: &Rc<Registrierung>, polkit: &Rc<Polkit>) -> gio::SignalSubscription {
+    let reg = reg.clone();
+    let polkit = polkit.clone();
+    let bus = reg.bus.clone();
+    bus.subscribe_to_signal(
+        Some("org.freedesktop.DBus"),
+        Some("org.freedesktop.DBus"),
+        Some("NameOwnerChanged"),
+        Some("/org/freedesktop/DBus"),
+        Some(POLKIT_NAME),
+        gio::DBusSignalFlags::NONE,
+        move |signal| {
+            if let Some((name, alt, neu)) = signal.parameters.get::<(String, String, String)>()
+                && name == POLKIT_NAME
+            {
+                besitzerwechsel(&reg, &polkit, &alt, &neu);
+            }
+        },
     )
-    .map_err(|e| format!("RegisterAuthenticationAgent: {e}"))?;
-    protokoll(&format!(
-        "registriert bei polkitd (PID {}, Subjekt {beschreibung}, Locale {locale}, Objekt {OBJEKT})",
-        std::process::id()
-    ));
-    Ok(bus)
+}
+
+/// Objekt anmelden, Wache einrichten, dann registrieren. Die Wache steht vor
+/// der ersten Registrierung, damit kein Wechsel dazwischen verloren geht.
+fn registrieren(
+    app: &gtk::Application,
+    polkit: Rc<Polkit>,
+) -> Result<(Rc<Registrierung>, gio::SignalSubscription), String> {
+    let bus = gio::bus_get_sync(gio::BusType::System, None::<&gio::Cancellable>)
+        .map_err(|e| format!("System-D-Bus nicht erreichbar: {e}"))?;
+    objekt_anmelden(app, polkit.clone(), &bus)?;
+    let reg = Rc::new(Registrierung::bestimmen(bus));
+    let wache = wache_einrichten(&reg, &polkit);
+    reg.erstmals()?;
+    Ok((reg, wache))
 }
 
 /// Locale für die Meldungen von polkitd: wie in der Querencia-Sitzung
@@ -884,7 +1142,7 @@ fn main() {
         }
         Some("--hilfe") | Some("--help") | Some("-h") => {
             print!(
-                "Aufruf: querencia-polkit-agent\n\nRegistriert sich als polkit-Legitimierungsagent der Sitzung und zeigt\nbei Bedarf den Passwortdialog. Läuft bis zum Sitzungsende (Autostart).\n"
+                "Aufruf: querencia-polkit-agent\n\nRegistriert sich als polkit-Legitimierungsagent der Sitzung und zeigt\nbei Bedarf den Passwortdialog. Läuft bis zum Sitzungsende (Autostart).\nStartet polkitd neu, registriert er sich beim neuen polkitd erneut.\n"
             );
             return;
         }
@@ -904,16 +1162,17 @@ fn main() {
     let app = gtk::Application::builder().application_id(APP_ID).build();
     // Kein Fenster beim Start: die Anwendung lebt, bis die Sitzung endet.
     let haltung: Rc<RefCell<Option<gio::ApplicationHoldGuard>>> = Rc::new(RefCell::new(None));
-    let bus: Rc<RefCell<Option<gio::DBusConnection>>> = Rc::new(RefCell::new(None));
+    type Halt = (Rc<Registrierung>, gio::SignalSubscription);
+    let registrierung: Rc<RefCell<Option<Halt>>> = Rc::new(RefCell::new(None));
     app.connect_startup({
         let polkit = polkit.clone();
         let haltung = haltung.clone();
-        let bus = bus.clone();
+        let registrierung = registrierung.clone();
         move |app| {
             css_laden();
             match registrieren(app, polkit.clone()) {
-                Ok(b) => {
-                    *bus.borrow_mut() = Some(b);
+                Ok(r) => {
+                    *registrierung.borrow_mut() = Some(r);
                     *haltung.borrow_mut() = Some(app.hold());
                 }
                 Err(e) => {
@@ -992,6 +1251,50 @@ mod tests {
         assert_eq!(locale_fuer_polkit(None, Some("en_US.UTF-8")), "en_US.UTF-8");
         assert_eq!(locale_fuer_polkit(Some(""), None), "de_DE.UTF-8");
         assert_eq!(locale_fuer_polkit(Some("../x"), Some("C")), "C");
+    }
+
+    #[test]
+    fn besitzerwechsel_bewerten() {
+        // Start: registriert bei :1.5
+        assert_eq!(wechsel_bewerten(Some(":1.5"), "", ":1.5"), Wechsel::Bekannt);
+        assert_eq!(wechsel_bewerten(Some(":1.5"), ":1.5", ""), Wechsel::Beendet);
+        assert_eq!(wechsel_bewerten(None, ":1.5", ""), Wechsel::Beendet);
+        assert_eq!(
+            wechsel_bewerten(None, "", ":1.9"),
+            Wechsel::Neu { vorgaenger: false }
+        );
+        // derselbe Prozess gibt den Namen ab und nimmt ihn wieder
+        assert_eq!(
+            wechsel_bewerten(None, "", ":1.5"),
+            Wechsel::Neu { vorgaenger: false }
+        );
+        // Übernahme ohne Lücke
+        assert_eq!(
+            wechsel_bewerten(Some(":1.5"), ":1.5", ":1.9"),
+            Wechsel::Neu { vorgaenger: true }
+        );
+    }
+
+    #[test]
+    fn wartezeit_waechst_und_endet() {
+        assert_eq!(wartezeit(0), None);
+        assert_eq!(wartezeit(1), Some(500));
+        assert_eq!(wartezeit(2), Some(1000));
+        assert_eq!(wartezeit(6), Some(15000));
+        assert_eq!(wartezeit(11), Some(30000));
+        assert_eq!(wartezeit(12), None);
+        let summe: u64 = (1..=11).filter_map(wartezeit).sum();
+        assert_eq!(summe, 180_500);
+    }
+
+    #[test]
+    fn zweite_registrierung_erkannt() {
+        assert!(schon_registriert(
+            "GDBus.Error:org.freedesktop.PolicyKit1.Error.Failed: An authentication agent already exists for the given subject"
+        ));
+        assert!(!schon_registriert(
+            "GDBus.Error:org.freedesktop.DBus.Error.NoReply: Timeout was reached"
+        ));
     }
 
     #[test]

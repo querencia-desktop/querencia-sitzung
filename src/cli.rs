@@ -6,6 +6,7 @@
 //!                   [--countdown SEK]
 //! querencia-sitzung --sperren [--sofort]
 //! querencia-sitzung --leerlauf MINUTEN | --leerlauf-sekunden SEK
+//! querencia-sitzung --grafik-pruefen
 //! querencia-sitzung --version | --hilfe
 //! ```
 //!
@@ -58,6 +59,8 @@ pub enum Befehl {
     Leerlauf {
         sekunden: u32,
     },
+    /// OpenGL-Renderer ohne Fenster ausgeben (für den Sitzungsstarter).
+    GrafikPruefen,
     Version,
     Hilfe,
 }
@@ -139,6 +142,7 @@ where
                 leerlauf = Some(zahl(arg, naechstes, LEERLAUF_MAX_MINUTEN * 60)?);
                 i += 1;
             }
+            "--grafik-pruefen" => befehle.push(arg),
             "--version" | "-V" => befehle.push("--version"),
             "--hilfe" | "--help" | "-h" => befehle.push("--hilfe"),
             "--sofort" => sofort = true,
@@ -176,6 +180,7 @@ where
     Ok(match befehl {
         "--version" => Befehl::Version,
         "--hilfe" => Befehl::Hilfe,
+        "--grafik-pruefen" => Befehl::GrafikPruefen,
         "--dialog" => Befehl::Dialog { countdown },
         "--leerlauf" | "--leerlauf-sekunden" => Befehl::Leerlauf {
             sekunden: leerlauf.expect("Leerlaufzeit geparst"),
@@ -230,6 +235,9 @@ Befehle (genau einer):
                       Gesperrt schaltet der Leerlaufdienst die Bildschirme
                       nach 2 min ohne Eingabe ab; ~/.config/querencia/
                       sitzung.ini mit [Sperre] BildschirmAus=SEK|Nmin, 0 = nie.
+  --grafik-pruefen    OpenGL-Renderer ohne Fenster ausgeben (renderer=…,
+                      vendor=…, dauer-ms=…); fragt der Sitzungsstarter vor
+                      dem Start von labwc (Software-OpenGL bei zink auf NVK)
   --version, --hilfe
 
 Optionen:
@@ -354,6 +362,10 @@ mod tests {
         assert_eq!(p(&["--hilfe"]), Ok(Befehl::Hilfe));
         assert_eq!(p(&["--help"]), Ok(Befehl::Hilfe));
         assert_eq!(p(&["-h"]), Ok(Befehl::Hilfe));
+        assert_eq!(p(&["--grafik-pruefen"]), Ok(Befehl::GrafikPruefen));
+        assert!(p(&["--grafik-pruefen", "--sofort"]).is_err());
+        assert!(p(&["--grafik-pruefen", "--dialog"]).is_err());
+        assert!(HILFE.contains("--grafik-pruefen"));
         assert!(HILFE.contains("--sperren --sofort"));
         assert!(HILFE.contains("Abbrechen, Neu starten, Herunterfahren"));
     }
