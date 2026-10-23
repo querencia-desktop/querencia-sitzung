@@ -16,7 +16,6 @@
 #   N04 Anfrage danach           N08 Anfrage danach
 #   N09 ein Agent-Prozess, Subjekt und Locale überall gleich
 . "$(dirname "$0")/gemeinsam.sh"
-: >"$R"
 W=$(dirname "$EINGABE")
 [ -x "$AGENT" ] || { nok "N00 Agent fehlt: $AGENT"; touch "$QS_PROFILE/logs/FERTIG"; exit 1; }
 
@@ -155,8 +154,10 @@ anfrage_pruefen $A3 N08 n08-nach-zeitgrenze
 # N09 derselbe Agent-Prozess, überall dasselbe Subjekt und dieselbe Locale
 paare=$(grep -o 'REGISTRIERT #[0-9]* [^ ]* subjekt=[^ ]* locale=[^ ]* objekt=[^ ]*' "$PL" | cut -d' ' -f4- | sort -u)
 anzahl=$(grep -c 'REGISTRIERT #' "$PL")
+# Locale wie bei der ersten Registrierung (aus LANGUAGE, de: de_DE.UTF-8)
+erste=$(grep -o 'registriert bei polkitd .*Locale [^,]*' "$AL" | head -1 | sed 's/.*Locale //')
 if kill -0 $AG 2>/dev/null && [ "$(echo "$paare" | wc -l)" = 1 ] && [ "$anzahl" = 4 ] &&
-    [ "$paare" = "subjekt=unix-session:session-id=q1 locale=de_DE.UTF-8 objekt=/org/querencia/PolkitAgent" ]; then
+    [ "$paare" = "subjekt=unix-session:session-id=q1 locale=$erste objekt=/org/querencia/PolkitAgent" ]; then
     ok "N09 Agent $AG läuft durchgehend, 4 Registrierungen mit gleichem Subjekt und gleicher Locale ($paare)"
 else
     nok "N09 Agent lebt: $(kill -0 $AG 2>/dev/null && echo ja || echo nein), $anzahl Registrierungen: $(echo "$paare" | tr '\n' ';')"

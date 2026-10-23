@@ -73,6 +73,9 @@ auswerten_a02() {
 }
 
 if [ $# -ge 1 ]; then
+    # Einzellauf: nur dieses Szenario im Ergebnis (nicht an die eingecheckte
+    # ergebnis.txt eines früheren Laufs anhängen; 0.1.8)
+    : >"$OUT/ergebnis.txt"
     lauf "$1" "${2:-1}" "${3:-240}"
 else
     : >"$OUT/ergebnis.txt"
