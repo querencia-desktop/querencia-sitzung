@@ -19,16 +19,7 @@ Wayland. Alpha software; documentation is in German.
 > Datenverlustgarantie – der Sperrbildschirm ist keine geprüfte
 > Sicherheitskomponente.
 
-| | |
-|---|---|
-| Version | 0.1.8 (Tag `sitzung/0.1.8`): polkit-Agent registriert sich nach einem Neustart von polkitd erneut (QD-156), `--grafik-pruefen` für den Sitzungsstarter (QD-169); davor 0.1.7: Dialog „Herunterfahren“ mit „Neu starten“, 0.1.6: Bildschirm aus nach der Sperre |
-| Auf der Entwicklungs-VM | 0.1.7 aktiviert am 23.10.2026 00:19; 0.1.8 wartet auf Freigabe |
-| Letzte Prüfung | 23.10.2026 (0.1.8): fmt, Clippy, 72 + 13 Unit-Tests; polkitd-Neustart mit Attrappe auf Wegwerf-Systembus de/en je 13/13; isolierte Regression 46 PASS / 0 FAIL / 4 BLOCKED, Countdown 9/9, Abmelden A02a–e 5/5, Sprache de/en je 7/7, ScreenSaver 15/15, Dunkel 8/8, Bildschirm aus 18/18, Herunterfahren 13/13, fremde GTK-3-Programme 21/22 (F05b wie 0.1.7), Probe 45/45 (`nachweis/018/`); davor (0.1.7): fmt, Clippy, 70 + 10 Unit-Tests; Dialog „Herunterfahren“ mit „Neu starten“ (logind-Ersatz auf Wegwerf-Systembus) de/en je 1280×720 13/13, 1024×768 und 1920×1080 je 12/12, hell und dunkel; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Countdown 9/9, Abmelden A01/A02a–e 6/6, Sprache Deutsch und Englisch je 7/7, ScreenSaver-Dienst 15/15, Dunkelmodus 8/8, fremde GTK-3-Programme 21/22 (F05b Prüffehler der Titelschrift-Messung, mit 0.1.6 gleich), Bildschirm aus 18/18 |
-| Getestet auf | Ubuntu 26.04, labwc 0.9.8, GTK 4.22 |
-
-Änderungen je Version: [CHANGELOG.md](CHANGELOG.md).
-
-## Befehle und Aufbau
+## Zweck
 
 ```text
 querencia-sitzung --dialog [--countdown SEK]
@@ -46,11 +37,11 @@ querencia-polkit-agent
 | Abmelden | `<labwc> --exit` mit dem labwc aus `/proc/$LABWC_PID/exe` (wie das Panel) | `src/aktion.rs` |
 | Neu starten, Herunterfahren | systemd-logind D-Bus `CanReboot`/`CanPowerOff`, dann `Reboot`/`PowerOff` (interactive=true, polkit darf fragen) | `src/aktion.rs` |
 | Sperrbildschirm | ext-session-lock-v1 direkt über wayland-client (kein GTK), Cairo/Pango, eine Fläche je Ausgang, Uhr, Passwortfeld | `src/sperre.rs` |
-| Passwort | PAM über `dlopen("libpam.so.0")` (keine PAM-Entwicklungsdateien auf der VM), Dienst `querencia-sitzung` falls in `/etc/pam.d`, sonst `login` | `src/pam.rs` |
+| Passwort | PAM über `dlopen("libpam.so.0")`, Dienst `querencia-sitzung` falls in `/etc/pam.d`, sonst `login` | `src/pam.rs` |
 | Leerlauf | ext-idle-notify-v1, startet `--sperren --sofort`; bietet `org.freedesktop.ScreenSaver` an (Inhibit hält die Sperre an, Lock, GetActive, ActiveChanged), GLib-Hauptschleife | `src/leerlauf.rs`, `src/schoner.rs` |
 | Bildschirm aus | gesperrt und `BildschirmAus` (Vorgabe 120 s, `sitzung.ini` `[Sperre]`, 0 = nie) ohne Eingabe: Ausgänge aus über wlr-output-power-management, Eingabe oder Entsperren schaltet an; ScreenSaver-Hemmung hält an | `src/bildschirm.rs`, `src/leerlauf.rs` |
 | polkit-Agent | `querencia-polkit-agent`: Passwortdialog für polkit, Prüfung über libpolkit-agent-1 und `polkit-agent-helper-1`; registriert sich nach einem Neustart von polkitd erneut (`NameOwnerChanged`, 0.1.8, [docs/polkit-agent.md](docs/polkit-agent.md)) | `src/bin/querencia-polkit-agent.rs` |
-| Grafikprüfung | `--grafik-pruefen`: OpenGL-Renderer ohne Fenster (EGL surfaceless, libEGL per `dlopen`) für den Sitzungsstarter, Software-OpenGL bei zink auf NVK (QD-169) | `src/grafik.rs` |
+| Grafikprüfung | `--grafik-pruefen`: OpenGL-Renderer ohne Fenster (EGL surfaceless, libEGL per `dlopen`) für den Sitzungsstarter, Software-OpenGL bei zink auf NVK | `src/grafik.rs` |
 | Dunkelmodus | Farben nur aus dem GTK-Thema; Einstellung `gtk-interface-color-scheme` nach dem Start neu melden (GTK-4.22-Startfehler) | `src/farbschema.rs` |
 | Dunkelmodus für GTK 3 | Leerlaufdienst schaltet bei `dunkel_aktiv` fremde GTK-3-Programme mit (verwalteter Block in `~/.config/gtk-3.0/settings.ini`, wirkt beim nächsten Programmstart); fremde Zeilen bleiben; labwc-Rahmen nicht (Sache von Thema und Einstellungen) | `src/mitschalten.rs` |
 
@@ -72,8 +63,8 @@ Anwendungskennung (App-ID): `org.querencia.Sitzung` (polkit-Agent:
 
 | | |
 |---|---|
-| Version | 0.1.3 (Tags `sitzung/0.1.3`, `sitzung/0.1.3-1`; Rückfragen ohne Countdown, sauberes Abmelden) |
-| Letzte Prüfung | 20.10.2026: fmt, Clippy, 49 + 10 Unit-Tests; isolierte Regression 33 bestanden, 0 Fehler, 4 bewusst ausgelassen (echte logind/PAM/polkit), Sprache Deutsch und Englisch je 7 |
+| Version | 0.1.8 (Tag `sitzung/0.1.8`): polkit-Agent registriert sich nach einem Neustart von polkitd erneut, `--grafik-pruefen` für den Sitzungsstarter; davor 0.1.7: Dialog „Herunterfahren“ mit „Neu starten“, 0.1.6: Bildschirm aus nach der Sperre |
+| Letzte Prüfung | 23.10.2026 (0.1.8): fmt, Clippy, 72 + 13 Unit-Tests; polkitd-Neustart mit Attrappe auf Wegwerf-Systembus de/en je 13/13; isolierte Regression 46 PASS / 0 FAIL / 4 BLOCKED, Countdown 9/9, Abmelden A02a–e 5/5, Sprache de/en je 7/7, ScreenSaver 15/15, Dunkel 8/8, Bildschirm aus 18/18, Herunterfahren 13/13, fremde GTK-3-Programme 21/22 (F05b wie 0.1.7), Probe 45/45; davor (0.1.7): fmt, Clippy, 70 + 10 Unit-Tests; Dialog „Herunterfahren“ mit „Neu starten“ (logind-Ersatz auf Wegwerf-Systembus) de/en je 1280×720 13/13, 1024×768 und 1920×1080 je 12/12, hell und dunkel; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Countdown 9/9, Abmelden A01/A02a–e 6/6, Sprache Deutsch und Englisch je 7/7, ScreenSaver-Dienst 15/15, Dunkelmodus 8/8, fremde GTK-3-Programme 21/22 (F05b Prüffehler der Titelschrift-Messung, mit 0.1.6 gleich), Bildschirm aus 18/18 |
 | Bekannte Lücken | siehe „Alpha“ |
 | Getestet auf | Ubuntu 26.04, labwc 0.9.8, GTK 4.22, Rust 1.93 |
 | Nicht getestet | andere Compositoren und Distributionen, HiDPI, echte Mehrmonitor-Hardware (nur zwei virtuelle Ausgänge) |
