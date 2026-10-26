@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.1.9 – 2026-10-26
+
+Italienisch, Spanisch, Französisch:
+
+- Neue Kataloge `po/it.po`, `po/es.po`, `po/fr.po` (je 45 Texte, vollständig)
+  für Dialoge, Rückfragen, Countdown, Fehlermeldungen und den polkit-Agenten;
+  Wortwahl nach gnome-session/polkit-gnome der jeweiligen Sprache und der
+  gemeinsamen Querencia-Begriffstabelle, Zugriffstasten im Dialog „Sitzung
+  beenden“ je Sprache eindeutig.
+- Desktop-Datei mit it/es/fr; Plural-Forms für it/es in `werkzeug/i18n.py`.
+- Prüfszenario `szenario-sprache.sh`: erwartet den Katalog für de/it/es/fr und
+  löst „Abmelden“ über die Zugriffstaste der jeweiligen Sprache aus.
+- Weiterhin deutsch im Code: Sperrbildschirm und PAM-Meldungen (wie bisher).
+
 ## 0.1.8 – 2026-10-23
 
 polkit-Agent nach einem Neustart von polkitd (QD-156):

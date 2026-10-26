@@ -22,7 +22,7 @@ start k1 --dialog
 KAT=$(grep -o '[^ ]*querencia-sitzung.mo' "/proc/$P/maps" 2>/dev/null | head -1)
 echo "INFO Katalog: ${KAT:-keiner}" >>"$R"
 case $SPRACHE in
-de) [ -n "$KAT" ] && ok "de: Katalog eingeblendet" || nok "de: kein Katalog eingeblendet" ;;
+de | it | es | fr) [ -n "$KAT" ] && ok "$SPRACHE: Katalog eingeblendet" || nok "$SPRACHE: kein Katalog eingeblendet" ;;
 *) [ -z "$KAT" ] && ok "$SPRACHE: kein Katalog eingeblendet" || nok "$SPRACHE: Katalog eingeblendet" ;;
 esac
 weg; shot k1-dialog
@@ -37,8 +37,9 @@ for a in abmelden neustart herunterfahren sperren; do
     [ $RC = 0 ] && grep -q 'abgebrochen' "$OUT/k2-$a.log" && ok "Rückfrage --$a geöffnet (Bild k2-$a), Esc bricht ab" || nok "k2-$a (Exit $RC)"
 done
 
-# 3 Zugriffstaste „Abmelden“ der Sprache (de Ab_melden, en Log _Out) im Trockenlauf
-case $SPRACHE in de) T=m ;; *) T=o ;; esac
+# 3 Zugriffstaste „Abmelden“ der Sprache (de Ab_melden, en Log _Out, it _Termina
+# sessione, es Cerrar la _sesión, fr Se _déconnecter) im Trockenlauf
+case $SPRACHE in de) T=m ;; it) T=t ;; es) T=s ;; fr) T=d ;; *) T=o ;; esac
 start k3 --dialog; q "chord alt $T" "wait 800"; ende
 [ $RC = 0 ] && grep -q 'TROCKENLAUF: .*labwc --exit' "$OUT/k3.log" && ok "Alt+$T löst „Abmelden“ aus (Trockenlauf, isolierter labwc)" || nok "Alt+$T (Exit $RC)"
 

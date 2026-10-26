@@ -1,0 +1,237 @@
+# Querencia Sitzung: französische Übersetzung.
+# Copyright (C) 2026 Querencia Desktop contributors
+# Diese Datei steht unter derselben Lizenz wie Querencia Sitzung (GPL-3.0-or-later).
+# Begriffe nach der gemeinsamen Querencia-Begriffstabelle (GNOME-Wortwahl).
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: querencia-sitzung\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2026-10-26 22:42+0100\n"
+"Last-Translator: Querencia Desktop contributors\n"
+"Language-Team: Français (Querencia)\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. TRANSLATORS: Desktop-Datei, Schlüssel Name
+#: data/org.querencia.Sitzung.desktop.in:14
+msgid "Querencia Sitzung"
+msgstr "Querencia Sitzung"
+
+#. TRANSLATORS: Desktop-Datei, Schlüssel GenericName
+#: data/org.querencia.Sitzung.desktop.in:15
+msgid "Session"
+msgstr "Session"
+
+#. TRANSLATORS: Desktop-Datei, Schlüssel Comment
+#: data/org.querencia.Sitzung.desktop.in:16
+msgid "Log out, lock the screen, restart or shut down"
+msgstr "Se déconnecter, verrouiller l’écran, redémarrer ou éteindre"
+
+#: src/aktion.rs:64
+msgid "Cannot log out: no labwc of this session (LABWC_PID)"
+msgstr ""
+"Impossible de se déconnecter : aucun labwc dans cette session (LABWC_PID)"
+
+#: src/aktion.rs:81
+#, no-c-format
+msgid "{program} --exit failed: {error}"
+msgstr "Échec de {program} --exit : {error}"
+
+#: src/aktion.rs:93
+#, no-c-format
+msgid "{program} --exit reported {status}"
+msgstr "{program} --exit a renvoyé {status}"
+
+#. TRANSLATORS: {action} ist „Restart“ oder „Shut Down“.
+#: src/aktion.rs:110
+#, no-c-format
+msgid ""
+"{action} is not allowed for this user (logind: no). Please run it at the console or as an administrator."
+msgstr ""
+"{action} : action non autorisée pour cet utilisateur (logind : no). Veuillez l’exécuter depuis la console ou en tant qu’administrateur."
+
+#: src/aktion.rs:115
+#, no-c-format
+msgid "{action} is not possible on this system (logind: na)."
+msgstr "{action} : action impossible sur ce système (logind : na)."
+
+#: src/aktion.rs:119
+#, no-c-format
+msgid "{action}: unexpected answer from logind: “{answer}”"
+msgstr "{action} : réponse inattendue de logind : « {answer} »"
+
+#: src/aktion.rs:133
+#, no-c-format
+msgid "System D-Bus not reachable: {error}"
+msgstr "D-Bus système injoignable : {error}"
+
+#: src/aktion.rs:190
+#, no-c-format
+msgid "Cannot start the lock screen ({program}): {error}"
+msgstr "Impossible de lancer le verrouillage de l’écran ({program}) : {error}"
+
+#: src/bin/querencia-polkit-agent.rs:250
+msgid "Authenticate"
+msgstr "Authentification requise"
+
+#. TRANSLATORS: nur wenn polkitd keine eigene Meldung schickt.
+#: src/bin/querencia-polkit-agent.rs:267
+msgid "An application requires authentication."
+msgstr "Une application nécessite une authentification."
+
+#: src/bin/querencia-polkit-agent.rs:278
+#, no-c-format
+msgid "Action: {action}"
+msgstr "Action : {action}"
+
+#: src/bin/querencia-polkit-agent.rs:285
+#, no-c-format
+msgid "Password for {user}:"
+msgstr "Mot de passe de {user} :"
+
+#: src/bin/querencia-polkit-agent.rs:297
+msgid "Connecting to the authentication service…"
+msgstr "Connexion au service d’authentification…"
+
+#: src/bin/querencia-polkit-agent.rs:309 src/dialog.rs:40
+msgid "_Cancel"
+msgstr "_Annuler"
+
+#: src/bin/querencia-polkit-agent.rs:313
+msgid "_Authenticate"
+msgstr "A_uthentifier"
+
+#: src/bin/querencia-polkit-agent.rs:430
+msgid "Enter the password and press Enter"
+msgstr "Saisissez le mot de passe et appuyez sur Entrée"
+
+#: src/bin/querencia-polkit-agent.rs:507
+#, no-c-format
+msgid "Wrong password, please try again ({attempt} of {max})"
+msgstr "Mot de passe incorrect, veuillez réessayer ({attempt} sur {max})"
+
+#: src/bin/querencia-polkit-agent.rs:552
+msgid "Checking the password…"
+msgstr "Vérification du mot de passe…"
+
+#: src/dialog.rs:25
+msgid "Log _Out"
+msgstr "Se _déconnecter"
+
+#: src/dialog.rs:27
+msgid "_Lock Screen"
+msgstr "_Verrouiller l’écran"
+
+#: src/dialog.rs:30
+msgid "_Restart"
+msgstr "_Redémarrer"
+
+#: src/dialog.rs:32
+msgid "_Shut Down"
+msgstr "É_teindre"
+
+#: src/dialog.rs:46
+msgid "Log Out"
+msgstr "Se déconnecter"
+
+#: src/dialog.rs:47
+msgid "Lock Screen"
+msgstr "Verrouiller l’écran"
+
+#: src/dialog.rs:48
+msgid "Restart"
+msgstr "Redémarrer"
+
+#: src/dialog.rs:49
+msgid "Shut Down"
+msgstr "Éteindre"
+
+#: src/dialog.rs:56
+msgid ""
+"All applications will be closed. Anything not saved there will be lost."
+msgstr ""
+"Toutes les applications seront fermées. Ce qui n’a pas été enregistré sera perdu."
+
+#: src/dialog.rs:60
+msgid "Log out of this system now?"
+msgstr "Se déconnecter maintenant ?"
+
+#: src/dialog.rs:61
+msgid ""
+"All applications of this session will be closed. Anything not saved there will be lost."
+msgstr ""
+"Toutes les applications de cette session seront fermées. Ce qui n’a pas été enregistré sera perdu."
+
+#: src/dialog.rs:68
+msgid "Lock the screen now?"
+msgstr "Verrouiller l’écran maintenant ?"
+
+#: src/dialog.rs:69
+msgid ""
+"The password is needed to unlock the screen. The applications keep running."
+msgstr ""
+"Le mot de passe est nécessaire pour déverrouiller l’écran. Les applications continuent de fonctionner."
+
+#: src/dialog.rs:76
+msgid "Restart this system now?"
+msgstr "Redémarrer l’ordinateur maintenant ?"
+
+#: src/dialog.rs:82
+msgid "Shut down or restart this system now?"
+msgstr "Éteindre ou redémarrer l’ordinateur maintenant ?"
+
+#: src/dialog.rs:94
+#, no-c-format
+msgid "You will be automatically logged out in {n} second."
+msgid_plural "You will be automatically logged out in {n} seconds."
+msgstr[0] "Vous serez déconnecté automatiquement dans {n} seconde."
+msgstr[1] "Vous serez déconnecté automatiquement dans {n} secondes."
+
+#: src/dialog.rs:100
+#, no-c-format
+msgid "The screen will be locked automatically in {n} second."
+msgid_plural "The screen will be locked automatically in {n} seconds."
+msgstr[0] "L’écran sera verrouillé automatiquement dans {n} seconde."
+msgstr[1] "L’écran sera verrouillé automatiquement dans {n} secondes."
+
+#: src/dialog.rs:106
+#, no-c-format
+msgid "This system will be automatically restarted in {n} second."
+msgid_plural "This system will be automatically restarted in {n} seconds."
+msgstr[0] "L’ordinateur redémarrera automatiquement dans {n} seconde."
+msgstr[1] "L’ordinateur redémarrera automatiquement dans {n} secondes."
+
+#: src/dialog.rs:112
+#, no-c-format
+msgid "This system will be automatically shut down in {n} second."
+msgid_plural "This system will be automatically shut down in {n} seconds."
+msgstr[0] "L’ordinateur s’éteindra automatiquement dans {n} seconde."
+msgstr[1] "L’ordinateur s’éteindra automatiquement dans {n} secondes."
+
+#. TRANSLATORS: steht unter der Countdown-Zeile, solange ein anderes Fenster aktiv ist.
+#: src/dialog.rs:187
+msgid "Paused while this window is not active."
+msgstr "En pause tant que cette fenêtre n’est pas active."
+
+#: src/dialog.rs:220
+msgid "End Session"
+msgstr "Terminer la session"
+
+#: src/dialog.rs:221
+msgid "End this session now?"
+msgstr "Terminer cette session maintenant ?"
+
+#: src/dialog.rs:222
+msgid ""
+"Log Out closes all applications of this session; Restart and Shut Down stop the computer. Anything not saved will be lost."
+msgstr ""
+"« Se déconnecter » ferme toutes les applications de cette session ; « Redémarrer » et « Éteindre » arrêtent l’ordinateur. Ce qui n’a pas été enregistré sera perdu."
+
+#: src/dialog.rs:523
+msgid "_Close"
+msgstr "_Fermer"

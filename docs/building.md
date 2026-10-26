@@ -23,7 +23,7 @@ erzeugt GNU gettext oder das Werkzeug des Repos:
 
 ```bash
 msgfmt -c -o share/locale/de/LC_MESSAGES/querencia-sitzung.mo po/de.po
-python3 werkzeug/i18n.py mo <ziel>        # <ziel>/de/LC_MESSAGES/querencia-sitzung.mo
+python3 werkzeug/i18n.py mo <ziel>        # <ziel>/<lang>/LC_MESSAGES/querencia-sitzung.mo (de it es fr)
 ```
 
 Ohne Katalog ist die Oberfläche englisch. `i18n::init()` setzt die Locale
