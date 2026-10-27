@@ -9,9 +9,10 @@ Installiert wird es zusammen mit Querencia Desktop aus der APT-Quelle;
 Anleitung auf <https://querencialinux.org>.
 
 *English summary:* Log out, lock screen, restart, shut down, idle lock and a
-polkit authentication agent for labwc, modelled on the GNOME 2 session
-dialogs. Part of Querencia Desktop, a classic GNOME-2-style desktop for
-Wayland. Alpha software; documentation is in German.
+polkit authentication agent for labwc, modelled on the GNOME 2 session dialogs.
+Part of Querencia Desktop, a classic GNOME-2-style desktop for Wayland. Alpha
+software; user interface in German, English, Italian, Spanish and French;
+documentation is in German.
 
 > **Alpha.** Entsperren mit dem echten Passwort und eine erfolgreiche
 > polkit-Legitimierung sind nur von Hand geprüft, nicht automatisch; es gibt
