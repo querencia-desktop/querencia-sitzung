@@ -22,7 +22,7 @@ documentation is in German.
 
 | | |
 |---|---|
-| Version | 0.1.9 (Tag `sitzung/0.1.9`): Italienisch, Spanisch, Französisch; davor 0.1.8: polkit-Agent registriert sich nach einem Neustart von polkitd erneut (QD-156), `--grafik-pruefen` für den Sitzungsstarter (QD-169); davor 0.1.7: Dialog „Herunterfahren“ mit „Neu starten“, 0.1.6: Bildschirm aus nach der Sperre |
+| Version | 0.1.10 (Tag `sitzung/0.1.10`): Sperrbildschirm und PAM-Meldungen in fünf Sprachen; davor 0.1.9: Italienisch, Spanisch, Französisch; davor 0.1.8: polkit-Agent registriert sich nach einem Neustart von polkitd erneut (QD-156), `--grafik-pruefen` für den Sitzungsstarter (QD-169); davor 0.1.7: Dialog „Herunterfahren“ mit „Neu starten“, 0.1.6: Bildschirm aus nach der Sperre |
 | Auf der Entwicklungs-VM | 0.1.7 aktiviert am 23.10.2026 00:19; 0.1.8 wartet auf Freigabe |
 | Letzte Prüfung | 23.10.2026 (0.1.8): fmt, Clippy, 72 + 13 Unit-Tests; polkitd-Neustart mit Attrappe auf Wegwerf-Systembus de/en je 13/13; isolierte Regression 46 PASS / 0 FAIL / 4 BLOCKED, Countdown 9/9, Abmelden A02a–e 5/5, Sprache de/en je 7/7, ScreenSaver 15/15, Dunkel 8/8, Bildschirm aus 18/18, Herunterfahren 13/13, fremde GTK-3-Programme 21/22 (F05b wie 0.1.7), Probe 45/45 (`nachweis/018/`); davor (0.1.7): fmt, Clippy, 70 + 10 Unit-Tests; Dialog „Herunterfahren“ mit „Neu starten“ (logind-Ersatz auf Wegwerf-Systembus) de/en je 1280×720 13/13, 1024×768 und 1920×1080 je 12/12, hell und dunkel; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Countdown 9/9, Abmelden A01/A02a–e 6/6, Sprache Deutsch und Englisch je 7/7, ScreenSaver-Dienst 15/15, Dunkelmodus 8/8, fremde GTK-3-Programme 21/22 (F05b Prüffehler der Titelschrift-Messung, mit 0.1.6 gleich), Bildschirm aus 18/18 |
 | Getestet auf | Ubuntu 26.04, labwc 0.9.8, GTK 4.22 |
@@ -73,7 +73,7 @@ Anwendungskennung (App-ID): `org.querencia.Sitzung` (polkit-Agent:
 
 | | |
 |---|---|
-| Version | 0.1.8 (Tag `sitzung/0.1.8`): polkit-Agent registriert sich nach einem Neustart von polkitd erneut, `--grafik-pruefen` für den Sitzungsstarter; davor 0.1.7: Dialog „Herunterfahren“ mit „Neu starten“, 0.1.6: Bildschirm aus nach der Sperre |
+| Version | 0.1.10 (Tag `sitzung/0.1.10`): Sperrbildschirm und PAM-Meldungen in fünf Sprachen; davor 0.1.9: Italienisch, Spanisch, Französisch; 0.1.8: polkit-Agent registriert sich nach einem Neustart von polkitd erneut, `--grafik-pruefen` für den Sitzungsstarter; davor 0.1.7: Dialog „Herunterfahren“ mit „Neu starten“, 0.1.6: Bildschirm aus nach der Sperre |
 | Letzte Prüfung | 23.10.2026 (0.1.8): fmt, Clippy, 72 + 13 Unit-Tests; polkitd-Neustart mit Attrappe auf Wegwerf-Systembus de/en je 13/13; isolierte Regression 46 PASS / 0 FAIL / 4 BLOCKED, Countdown 9/9, Abmelden A02a–e 5/5, Sprache de/en je 7/7, ScreenSaver 15/15, Dunkel 8/8, Bildschirm aus 18/18, Herunterfahren 13/13, fremde GTK-3-Programme 21/22 (F05b wie 0.1.7), Probe 45/45; davor (0.1.7): fmt, Clippy, 70 + 10 Unit-Tests; Dialog „Herunterfahren“ mit „Neu starten“ (logind-Ersatz auf Wegwerf-Systembus) de/en je 1280×720 13/13, 1024×768 und 1920×1080 je 12/12, hell und dunkel; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Countdown 9/9, Abmelden A01/A02a–e 6/6, Sprache Deutsch und Englisch je 7/7, ScreenSaver-Dienst 15/15, Dunkelmodus 8/8, fremde GTK-3-Programme 21/22 (F05b Prüffehler der Titelschrift-Messung, mit 0.1.6 gleich), Bildschirm aus 18/18 |
 | Bekannte Lücken | siehe „Alpha“ |
 | Getestet auf | Ubuntu 26.04, labwc 0.9.8, GTK 4.22, Rust 1.93 |
