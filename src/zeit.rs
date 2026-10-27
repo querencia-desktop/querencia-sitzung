@@ -1,44 +1,60 @@
-//! Uhrzeit und Datum auf Deutsch für den Sperrbildschirm (ohne Locale-
-//! Abhängigkeit: die Sitzung läuft mit LANG=en_US.UTF-8 und LANGUAGE=de).
+//! Uhrzeit und Datum für den Sperrbildschirm. Wochentage, Monate und die
+//! Form des Datums kommen aus dem Katalog (Sitzung 0.1.10), nicht aus der
+//! Locale: die Sitzung läuft mit LANG=en_US.UTF-8 und LANGUAGE=<Sprache>,
+//! LC_TIME wäre also englisch.
 
 use gtk::glib;
 
-const WOCHENTAGE: [&str; 7] = [
-    "Montag",
-    "Dienstag",
-    "Mittwoch",
-    "Donnerstag",
-    "Freitag",
-    "Samstag",
-    "Sonntag",
-];
-const MONATE: [&str; 12] = [
-    "Januar",
-    "Februar",
-    "März",
-    "April",
-    "Mai",
-    "Juni",
-    "Juli",
-    "August",
-    "September",
-    "Oktober",
-    "November",
-    "Dezember",
-];
+use crate::i18n::{gettext, gettext_f};
 
-/// „Samstag, 18. Oktober 2026“; `wochentag` 1 = Montag … 7 = Sonntag,
-/// `monat` 1 … 12 (wie `glib::DateTime`).
+/// Name des Wochentags, 1 = Montag … 7 = Sonntag (wie `glib::DateTime`).
+fn wochentag_name(wochentag: i32) -> String {
+    match wochentag.clamp(1, 7) {
+        1 => gettext("Monday"),
+        2 => gettext("Tuesday"),
+        3 => gettext("Wednesday"),
+        4 => gettext("Thursday"),
+        5 => gettext("Friday"),
+        6 => gettext("Saturday"),
+        _ => gettext("Sunday"),
+    }
+}
+
+/// Name des Monats, 1 … 12.
+fn monat_name(monat: i32) -> String {
+    match monat.clamp(1, 12) {
+        1 => gettext("January"),
+        2 => gettext("February"),
+        3 => gettext("March"),
+        4 => gettext("April"),
+        // TRANSLATORS: der Monat (Datum auf dem Sperrbildschirm)
+        5 => gettext("May"),
+        6 => gettext("June"),
+        7 => gettext("July"),
+        8 => gettext("August"),
+        9 => gettext("September"),
+        10 => gettext("October"),
+        11 => gettext("November"),
+        _ => gettext("December"),
+    }
+}
+
+/// „Saturday, October 18, 2026“, deutsch „Samstag, 18. Oktober 2026“;
+/// `wochentag` 1 = Montag … 7 = Sonntag, `monat` 1 … 12 (wie `glib::DateTime`).
 pub fn datum(wochentag: i32, tag: i32, monat: i32, jahr: i32) -> String {
-    let wt = WOCHENTAGE
-        .get((wochentag - 1).clamp(0, 6) as usize)
-        .copied()
-        .unwrap_or("");
-    let mo = MONATE
-        .get((monat - 1).clamp(0, 11) as usize)
-        .copied()
-        .unwrap_or("");
-    format!("{wt}, {tag}. {mo} {jahr}")
+    let (wt, mo) = (wochentag_name(wochentag), monat_name(monat));
+    let (tag, jahr) = (tag.to_string(), jahr.to_string());
+    gettext_f(
+        // TRANSLATORS: Datum auf dem Sperrbildschirm; Reihenfolge und
+        // Satzzeichen nach der Sprache (de „{weekday}, {day}. {month} {year}“)
+        "{weekday}, {month} {day}, {year}",
+        &[
+            ("weekday", &wt),
+            ("day", &tag),
+            ("month", &mo),
+            ("year", &jahr),
+        ],
+    )
 }
 
 /// Uhrzeit „HH:MM“ (24 Stunden).
@@ -73,18 +89,39 @@ pub fn bis_zur_naechsten_minute() -> u64 {
 mod tests {
     use super::*;
 
+    // Ohne gebundenen Katalog: englische msgid. Deutsch prüft
+    // `deutsches_datum_aus_dem_katalog` über po/de.po.
     #[test]
-    fn deutsches_datum() {
-        assert_eq!(datum(6, 18, 10, 2026), "Samstag, 18. Oktober 2026");
-        assert_eq!(datum(1, 1, 1, 2027), "Montag, 1. Januar 2027");
-        assert_eq!(datum(7, 31, 12, 2026), "Sonntag, 31. Dezember 2026");
-        assert_eq!(datum(3, 3, 3, 2027), "Mittwoch, 3. März 2027");
+    fn datum_englisch_ohne_katalog() {
+        assert_eq!(datum(6, 18, 10, 2026), "Saturday, October 18, 2026");
+        assert_eq!(datum(1, 1, 1, 2027), "Monday, January 1, 2027");
+        assert_eq!(datum(7, 31, 12, 2026), "Sunday, December 31, 2026");
+        assert_eq!(datum(3, 3, 3, 2027), "Wednesday, March 3, 2027");
     }
 
     #[test]
     fn datum_ausser_bereich_stuerzt_nicht_ab() {
-        assert_eq!(datum(0, 5, 13, 2026), "Montag, 5. Dezember 2026");
-        assert_eq!(datum(9, 5, 0, 2026), "Sonntag, 5. Januar 2026");
+        assert_eq!(datum(0, 5, 13, 2026), "Monday, December 5, 2026");
+        assert_eq!(datum(9, 5, 0, 2026), "Sunday, January 5, 2026");
+    }
+
+    /// Die deutsche Form steht im Katalog wie bisher im Code.
+    #[test]
+    fn deutsches_datum_aus_dem_katalog() {
+        let de = include_str!("../po/de.po");
+        for (en, de_text) in [
+            (
+                "{weekday}, {month} {day}, {year}",
+                "{weekday}, {day}. {month} {year}",
+            ),
+            ("Saturday", "Samstag"),
+            ("October", "Oktober"),
+            ("March", "März"),
+            ("May", "Mai"),
+        ] {
+            let eintrag = format!("msgid \"{en}\"\nmsgstr \"{de_text}\"");
+            assert!(de.contains(&eintrag), "{eintrag}");
+        }
     }
 
     #[test]

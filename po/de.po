@@ -71,47 +71,47 @@ msgstr "System-D-Bus nicht erreichbar: {error}"
 msgid "Cannot start the lock screen ({program}): {error}"
 msgstr "Sperrbildschirm nicht startbar ({program}): {error}"
 
-#: src/bin/querencia-polkit-agent.rs:250
+#: src/bin/querencia-polkit-agent.rs:268
 msgid "Authenticate"
 msgstr "Legitimierung erforderlich"
 
 #. TRANSLATORS: nur wenn polkitd keine eigene Meldung schickt.
-#: src/bin/querencia-polkit-agent.rs:267
+#: src/bin/querencia-polkit-agent.rs:285
 msgid "An application requires authentication."
 msgstr "Eine Anwendung braucht eine Legitimierung."
 
-#: src/bin/querencia-polkit-agent.rs:278
+#: src/bin/querencia-polkit-agent.rs:296
 #, no-c-format
 msgid "Action: {action}"
 msgstr "Aktion: {action}"
 
-#: src/bin/querencia-polkit-agent.rs:285
+#: src/bin/querencia-polkit-agent.rs:303
 #, no-c-format
 msgid "Password for {user}:"
 msgstr "Passwort für {user}:"
 
-#: src/bin/querencia-polkit-agent.rs:297
+#: src/bin/querencia-polkit-agent.rs:315
 msgid "Connecting to the authentication service…"
 msgstr "Verbindung zum Legitimierungsdienst …"
 
-#: src/bin/querencia-polkit-agent.rs:309 src/dialog.rs:40
+#: src/bin/querencia-polkit-agent.rs:327 src/dialog.rs:40
 msgid "_Cancel"
 msgstr "_Abbrechen"
 
-#: src/bin/querencia-polkit-agent.rs:313
+#: src/bin/querencia-polkit-agent.rs:331
 msgid "_Authenticate"
 msgstr "_Legitimieren"
 
-#: src/bin/querencia-polkit-agent.rs:430
+#: src/bin/querencia-polkit-agent.rs:448
 msgid "Enter the password and press Enter"
 msgstr "Passwort eingeben und Enter drücken"
 
-#: src/bin/querencia-polkit-agent.rs:507
+#: src/bin/querencia-polkit-agent.rs:525
 #, no-c-format
 msgid "Wrong password, please try again ({attempt} of {max})"
 msgstr "Falsches Passwort, bitte erneut versuchen ({attempt} von {max})"
 
-#: src/bin/querencia-polkit-agent.rs:552
+#: src/bin/querencia-polkit-agent.rs:570
 msgid "Checking the password…"
 msgstr "Passwort wird geprüft …"
 
@@ -231,3 +231,149 @@ msgstr ""
 #: src/dialog.rs:523
 msgid "_Close"
 msgstr "_Schließen"
+
+#: src/pam.rs:144 src/sperre.rs:340
+msgid "Wrong password"
+msgstr "Falsches Passwort"
+
+#: src/pam.rs:145
+msgid "Too many failed attempts, please wait a moment"
+msgstr "Zu viele Fehlversuche, bitte kurz warten"
+
+#: src/pam.rs:146
+msgid "Unknown user"
+msgstr "Benutzer unbekannt"
+
+#: src/pam.rs:147
+msgid "The password must be changed (console)"
+msgstr "Das Passwort muss geändert werden (Konsole)"
+
+#: src/pam.rs:148
+msgid "The account has expired"
+msgstr "Das Konto ist abgelaufen"
+
+#: src/pam.rs:149
+msgid "Access denied"
+msgstr "Zugriff verweigert"
+
+#: src/pam.rs:152
+#, no-c-format
+msgid "PAM error {code}"
+msgstr "PAM-Fehler {code}"
+
+#: src/pam.rs:205
+msgid "libpam.so.0 cannot be loaded"
+msgstr "libpam.so.0 nicht ladbar"
+
+#: src/pam.rs:261
+msgid "The input contains a null character"
+msgstr "Eingabe enthält ein Nullzeichen"
+
+#: src/sperre.rs:331
+msgid "Please enter your password"
+msgstr "Bitte Passwort eingeben"
+
+#: src/sperre.rs:360
+msgid "Checking password…"
+msgstr "Passwort wird geprüft …"
+
+#: src/sperre.rs:381
+#, no-c-format
+msgid "Cannot check the password: {error}"
+msgstr "Prüfung nicht möglich: {error}"
+
+#. TRANSLATORS: Platzhalter im leeren Passwortfeld des Sperrbildschirms
+#: src/sperre.rs:532
+msgid "Password"
+msgstr "Passwort"
+
+#: src/sperre.rs:557
+msgid "Caps Lock is on"
+msgstr "Die Feststelltaste ist aktiv"
+
+#: src/sperre.rs:558
+msgid "Enter your password and press Enter"
+msgstr "Passwort eingeben und Enter drücken"
+
+#: src/zeit.rs:13
+msgid "Monday"
+msgstr "Montag"
+
+#: src/zeit.rs:14
+msgid "Tuesday"
+msgstr "Dienstag"
+
+#: src/zeit.rs:15
+msgid "Wednesday"
+msgstr "Mittwoch"
+
+#: src/zeit.rs:16
+msgid "Thursday"
+msgstr "Donnerstag"
+
+#: src/zeit.rs:17
+msgid "Friday"
+msgstr "Freitag"
+
+#: src/zeit.rs:18
+msgid "Saturday"
+msgstr "Samstag"
+
+#: src/zeit.rs:19
+msgid "Sunday"
+msgstr "Sonntag"
+
+#: src/zeit.rs:26
+msgid "January"
+msgstr "Januar"
+
+#: src/zeit.rs:27
+msgid "February"
+msgstr "Februar"
+
+#: src/zeit.rs:28
+msgid "March"
+msgstr "März"
+
+#: src/zeit.rs:29
+msgid "April"
+msgstr "April"
+
+#. TRANSLATORS: der Monat (Datum auf dem Sperrbildschirm)
+#: src/zeit.rs:31
+msgid "May"
+msgstr "Mai"
+
+#: src/zeit.rs:32
+msgid "June"
+msgstr "Juni"
+
+#: src/zeit.rs:33
+msgid "July"
+msgstr "Juli"
+
+#: src/zeit.rs:34
+msgid "August"
+msgstr "August"
+
+#: src/zeit.rs:35
+msgid "September"
+msgstr "September"
+
+#: src/zeit.rs:36
+msgid "October"
+msgstr "Oktober"
+
+#: src/zeit.rs:37
+msgid "November"
+msgstr "November"
+
+#: src/zeit.rs:38
+msgid "December"
+msgstr "Dezember"
+
+#. TRANSLATORS: Datum auf dem Sperrbildschirm; Reihenfolge und Satzzeichen nach der Sprache (de „{weekday}, {day}. {month} {year}“)
+#: src/zeit.rs:47
+#, no-c-format
+msgid "{weekday}, {month} {day}, {year}"
+msgstr "{weekday}, {day}. {month} {year}"

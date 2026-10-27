@@ -69,9 +69,11 @@ Wortlaut ist der bisherige. Englischer Wortschatz nach gnome-session 2.30
 („Log Out“, „Lock Screen“, „Restart“, „Shut Down“, Countdown „You will be
 automatically logged out in 60 seconds.“) und polkit-gnome („Authenticate“,
 „Password for …:“). Übersetzt sind Dialoge, Rückfragen, Countdown,
-Fehlermeldungen der Aktionen und der polkit-Agent. **Noch deutsch** sind der
-Sperrbildschirm (`sperre.rs`, Datum aus `zeit.rs`) und die PAM-Meldungen
-(`pam.rs`): Änderungen dort nur nach Rückfrage. Beide Programme teilen den
+Fehlermeldungen der Aktionen und der polkit-Agent, seit 0.1.10 auch der
+Sperrbildschirm (`sperre.rs`; Wochentage, Monate und Form des Datums in
+`zeit.rs` aus dem Katalog, nicht aus `LC_TIME`) und die PAM-Meldungen
+(`pam.rs`). Am PAM-Ablauf und am Sperrverhalten ändert sich nichts ohne
+Rückfrage. Beide Programme teilen den
 Katalog `querencia-sitzung.mo`. Die Sprache folgt `LANGUAGE`/`LANG`; ohne
 deutschen Katalog erscheint Englisch. Befehlszeile, `--hilfe`, Protokoll und
 die D-Bus-Fehlerantworten des Agenten an polkitd bleiben deutsch.

@@ -17,6 +17,8 @@
 //! isolierten Testsitzung) entsperrt das Testpasswort ohne PAM.
 
 use std::os::fd::{AsFd, AsRawFd, FromRawFd, OwnedFd};
+
+use crate::i18n::{gettext, gettext_f};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
@@ -326,7 +328,7 @@ impl Sperre {
         }
         let passwort = std::mem::take(&mut self.passwort);
         if passwort.is_empty() {
-            self.meldung = Some(("Bitte Passwort eingeben".to_string(), false));
+            self.meldung = Some((gettext("Please enter your password"), false));
             self.neu_zeichnen = true;
             return;
         }
@@ -335,7 +337,7 @@ impl Sperre {
             if *test == passwort {
                 self.entsperren();
             } else {
-                self.meldung = Some(("Falsches Passwort".to_string(), true));
+                self.meldung = Some((gettext("Wrong password"), true));
             }
             self.neu_zeichnen = true;
             return;
@@ -355,7 +357,7 @@ impl Sperre {
             }
         });
         self.pruefung = Some(rx);
-        self.meldung = Some(("Passwort wird geprüft …".to_string(), false));
+        self.meldung = Some((gettext("Checking password…"), false));
         self.neu_zeichnen = true;
     }
 
@@ -375,7 +377,10 @@ impl Sperre {
             }
             pam::Ergebnis::Fehler(m) => {
                 protokoll(&format!("PAM-Fehler: {m}"));
-                self.meldung = Some((format!("Prüfung nicht möglich: {m}"), true));
+                self.meldung = Some((
+                    gettext_f("Cannot check the password: {error}", &[("error", &m)]),
+                    true,
+                ));
             }
         }
         self.neu_zeichnen = true;
@@ -520,7 +525,13 @@ fn malen(cr: &cairo::Context, b: f64, h: f64, inhalt: &Inhalt) {
     if inhalt.passwort_laenge == 0 {
         farbe(cr, GEDIMMT);
         let layout = layout(cr, "DejaVu Sans 12");
-        layout.set_text(if inhalt.prueft { "…" } else { "Passwort" });
+        let platzhalter = if inhalt.prueft {
+            "…".to_string()
+        } else {
+            // TRANSLATORS: Platzhalter im leeren Passwortfeld des Sperrbildschirms
+            gettext("Password")
+        };
+        layout.set_text(&platzhalter);
         let (_, th) = layout.pixel_size();
         cr.move_to(fx + 12.0, y + (feld_h - th as f64) / 2.0);
         pangocairo::functions::show_layout(cr, &layout);
@@ -543,10 +554,12 @@ fn malen(cr: &cairo::Context, b: f64, h: f64, inhalt: &Inhalt) {
     }
     y += feld_h + 14.0;
 
+    let feststell = gettext("Caps Lock is on");
+    let hinweis = gettext("Enter your password and press Enter");
     let (text, fehler) = match inhalt.meldung {
         Some((m, f)) => (m.as_str(), *f),
-        None if inhalt.feststell => ("Die Feststelltaste ist aktiv", true),
-        None => ("Passwort eingeben und Enter drücken", false),
+        None if inhalt.feststell => (feststell.as_str(), true),
+        None => (hinweis.as_str(), false),
     };
     farbe(cr, if fehler { AKZENT } else { GEDIMMT });
     let mh = text_zentriert(
@@ -562,13 +575,7 @@ fn malen(cr: &cairo::Context, b: f64, h: f64, inhalt: &Inhalt) {
     );
     if inhalt.feststell && inhalt.meldung.is_some() {
         farbe(cr, AKZENT);
-        text_zentriert(
-            cr,
-            mitte,
-            y + mh + 4.0,
-            "DejaVu Sans 11",
-            "Die Feststelltaste ist aktiv",
-        );
+        text_zentriert(cr, mitte, y + mh + 4.0, "DejaVu Sans 11", &feststell);
     }
 
     farbe(cr, GEDIMMT);

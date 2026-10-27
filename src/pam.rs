@@ -16,6 +16,8 @@
 use std::ffi::{CStr, CString, c_char, c_int, c_void};
 use std::path::Path;
 
+use crate::i18n::{gettext, gettext_f};
+
 const PAM_SUCCESS: c_int = 0;
 const PAM_AUTH_ERR: c_int = 7;
 const PAM_USER_UNKNOWN: c_int = 10;
@@ -135,18 +137,19 @@ pub enum Ergebnis {
     Fehler(String),
 }
 
-/// Deutsche Meldung zu einem PAM-Rückgabewert.
+/// Meldung zu einem PAM-Rückgabewert für den Sperrbildschirm (Katalog;
+/// der Text von pam_strerror kommt von PAM in dessen Sprache).
 pub fn meldung(code: c_int, strerror: Option<&str>) -> String {
     match code {
-        PAM_AUTH_ERR => "Falsches Passwort".to_string(),
-        PAM_MAXTRIES => "Zu viele Fehlversuche, bitte kurz warten".to_string(),
-        PAM_USER_UNKNOWN => "Benutzer unbekannt".to_string(),
-        PAM_NEW_AUTHTOK_REQD => "Das Passwort muss geändert werden (Konsole)".to_string(),
-        PAM_ACCT_EXPIRED => "Das Konto ist abgelaufen".to_string(),
-        PAM_PERM_DENIED => "Zugriff verweigert".to_string(),
+        PAM_AUTH_ERR => gettext("Wrong password"),
+        PAM_MAXTRIES => gettext("Too many failed attempts, please wait a moment"),
+        PAM_USER_UNKNOWN => gettext("Unknown user"),
+        PAM_NEW_AUTHTOK_REQD => gettext("The password must be changed (console)"),
+        PAM_ACCT_EXPIRED => gettext("The account has expired"),
+        PAM_PERM_DENIED => gettext("Access denied"),
         _ => match strerror {
             Some(s) if !s.is_empty() => format!("PAM: {s} ({code})"),
-            _ => format!("PAM-Fehler {code}"),
+            _ => gettext_f("PAM error {code}", &[("code", &code.to_string())]),
         },
     }
 }
@@ -199,7 +202,7 @@ impl Bibliothek {
         unsafe {
             let handle = libc::dlopen(name.as_ptr(), libc::RTLD_NOW | libc::RTLD_LOCAL);
             if handle.is_null() {
-                return Err("libpam.so.0 nicht ladbar".to_string());
+                return Err(gettext("libpam.so.0 cannot be loaded"));
             }
             let symbol = |s: &CStr| -> Result<*mut c_void, String> {
                 let p = libc::dlsym(handle, s.as_ptr());
@@ -255,7 +258,7 @@ pub fn pruefen(dienst: &str, benutzer: &str, passwort: &str) -> Ergebnis {
         CString::new(benutzer),
         CString::new(passwort),
     ) else {
-        return Ergebnis::Fehler("Eingabe enthält ein Nullzeichen".to_string());
+        return Ergebnis::Fehler(gettext("The input contains a null character"));
     };
     let mut gespraech = Box::new(Gespraech {
         passwort: passwort_c,
@@ -319,10 +322,11 @@ mod tests {
 
     #[test]
     fn meldungen_deutsch() {
-        assert_eq!(meldung(PAM_AUTH_ERR, None), "Falsches Passwort");
-        assert!(meldung(PAM_MAXTRIES, None).contains("Fehlversuche"));
+        // ohne gebundenen Katalog die englische msgid
+        assert_eq!(meldung(PAM_AUTH_ERR, None), "Wrong password");
+        assert!(meldung(PAM_MAXTRIES, None).contains("failed attempts"));
         assert_eq!(meldung(99, Some("Unknown")), "PAM: Unknown (99)");
-        assert_eq!(meldung(99, None), "PAM-Fehler 99");
+        assert_eq!(meldung(99, None), "PAM error 99");
         assert!(abgelehnt(PAM_AUTH_ERR));
         assert!(!abgelehnt(PAM_SUCCESS));
         assert!(!abgelehnt(PAM_CONV_ERR));
