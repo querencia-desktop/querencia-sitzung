@@ -19,7 +19,16 @@ Wayland. Alpha software; documentation is in German.
 > Datenverlustgarantie – der Sperrbildschirm ist keine geprüfte
 > Sicherheitskomponente.
 
-## Zweck
+| | |
+|---|---|
+| Version | 0.1.9 (Tag `sitzung/0.1.9`): Italienisch, Spanisch, Französisch; davor 0.1.8: polkit-Agent registriert sich nach einem Neustart von polkitd erneut (QD-156), `--grafik-pruefen` für den Sitzungsstarter (QD-169); davor 0.1.7: Dialog „Herunterfahren“ mit „Neu starten“, 0.1.6: Bildschirm aus nach der Sperre |
+| Auf der Entwicklungs-VM | 0.1.7 aktiviert am 23.10.2026 00:19; 0.1.8 wartet auf Freigabe |
+| Letzte Prüfung | 23.10.2026 (0.1.8): fmt, Clippy, 72 + 13 Unit-Tests; polkitd-Neustart mit Attrappe auf Wegwerf-Systembus de/en je 13/13; isolierte Regression 46 PASS / 0 FAIL / 4 BLOCKED, Countdown 9/9, Abmelden A02a–e 5/5, Sprache de/en je 7/7, ScreenSaver 15/15, Dunkel 8/8, Bildschirm aus 18/18, Herunterfahren 13/13, fremde GTK-3-Programme 21/22 (F05b wie 0.1.7), Probe 45/45 (`nachweis/018/`); davor (0.1.7): fmt, Clippy, 70 + 10 Unit-Tests; Dialog „Herunterfahren“ mit „Neu starten“ (logind-Ersatz auf Wegwerf-Systembus) de/en je 1280×720 13/13, 1024×768 und 1920×1080 je 12/12, hell und dunkel; isolierte Regression 33 PASS / 0 FAIL / 4 BLOCKED (echte logind/PAM/polkit bewusst ausgelassen), Countdown 9/9, Abmelden A01/A02a–e 6/6, Sprache Deutsch und Englisch je 7/7, ScreenSaver-Dienst 15/15, Dunkelmodus 8/8, fremde GTK-3-Programme 21/22 (F05b Prüffehler der Titelschrift-Messung, mit 0.1.6 gleich), Bildschirm aus 18/18 |
+| Getestet auf | Ubuntu 26.04, labwc 0.9.8, GTK 4.22 |
+
+Änderungen je Version: [CHANGELOG.md](CHANGELOG.md).
+
+## Befehle und Aufbau
 
 ```text
 querencia-sitzung --dialog [--countdown SEK]
@@ -120,7 +129,8 @@ Arbeitsweise: [CONTRIBUTING.md](CONTRIBUTING.md).
 ## Sprachen
 
 Seit 0.1.2 sind die Oberflächentexte englisch im Code (msgid) und deutsch in
-`po/de.po` (GNU gettext, Muster Querencia Editor 0.2.0); der deutsche
+`po/de.po` (GNU gettext, Muster Querencia Editor 0.2.0), seit 0.1.9 auch
+italienisch, spanisch und französisch (`po/it.po`, `po/es.po`, `po/fr.po`); der deutsche
 Wortlaut ist der bisherige. Englischer Wortschatz nach gnome-session 2.30
 („Log Out“, „Lock Screen“, „Restart“, „Shut Down“, Countdown „You will be
 automatically logged out in 60 seconds.“) und polkit-gnome („Authenticate“,

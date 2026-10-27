@@ -1,0 +1,237 @@
+# Querencia Sitzung: italienische Übersetzung.
+# Copyright (C) 2026 Querencia Desktop contributors
+# Diese Datei steht unter derselben Lizenz wie Querencia Sitzung (GPL-3.0-or-later).
+# Begriffe nach der gemeinsamen Querencia-Begriffstabelle (GNOME-Wortwahl).
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: querencia-sitzung\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2026-10-26 22:42+0100\n"
+"Last-Translator: Querencia Desktop contributors\n"
+"Language-Team: Italiano (Querencia)\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. TRANSLATORS: Desktop-Datei, Schlüssel Name
+#: data/org.querencia.Sitzung.desktop.in:14
+msgid "Querencia Sitzung"
+msgstr "Querencia Sitzung"
+
+#. TRANSLATORS: Desktop-Datei, Schlüssel GenericName
+#: data/org.querencia.Sitzung.desktop.in:15
+msgid "Session"
+msgstr "Sessione"
+
+#. TRANSLATORS: Desktop-Datei, Schlüssel Comment
+#: data/org.querencia.Sitzung.desktop.in:16
+msgid "Log out, lock the screen, restart or shut down"
+msgstr "Termina la sessione, blocca lo schermo, riavvia o spegni"
+
+#: src/aktion.rs:64
+msgid "Cannot log out: no labwc of this session (LABWC_PID)"
+msgstr ""
+"Impossibile terminare la sessione: nessun labwc in questa sessione (LABWC_PID)"
+
+#: src/aktion.rs:81
+#, no-c-format
+msgid "{program} --exit failed: {error}"
+msgstr "{program} --exit non riuscito: {error}"
+
+#: src/aktion.rs:93
+#, no-c-format
+msgid "{program} --exit reported {status}"
+msgstr "{program} --exit ha restituito {status}"
+
+#. TRANSLATORS: {action} ist „Restart“ oder „Shut Down“.
+#: src/aktion.rs:110
+#, no-c-format
+msgid ""
+"{action} is not allowed for this user (logind: no). Please run it at the console or as an administrator."
+msgstr ""
+"{action}: operazione non consentita per questo utente (logind: no). Eseguirla dalla console o come amministratore."
+
+#: src/aktion.rs:115
+#, no-c-format
+msgid "{action} is not possible on this system (logind: na)."
+msgstr "{action}: operazione non possibile su questo sistema (logind: na)."
+
+#: src/aktion.rs:119
+#, no-c-format
+msgid "{action}: unexpected answer from logind: “{answer}”"
+msgstr "{action}: risposta inattesa da logind: «{answer}»"
+
+#: src/aktion.rs:133
+#, no-c-format
+msgid "System D-Bus not reachable: {error}"
+msgstr "D-Bus di sistema non raggiungibile: {error}"
+
+#: src/aktion.rs:190
+#, no-c-format
+msgid "Cannot start the lock screen ({program}): {error}"
+msgstr "Impossibile avviare il blocco schermo ({program}): {error}"
+
+#: src/bin/querencia-polkit-agent.rs:250
+msgid "Authenticate"
+msgstr "Autenticazione richiesta"
+
+#. TRANSLATORS: nur wenn polkitd keine eigene Meldung schickt.
+#: src/bin/querencia-polkit-agent.rs:267
+msgid "An application requires authentication."
+msgstr "Un’applicazione richiede l’autenticazione."
+
+#: src/bin/querencia-polkit-agent.rs:278
+#, no-c-format
+msgid "Action: {action}"
+msgstr "Azione: {action}"
+
+#: src/bin/querencia-polkit-agent.rs:285
+#, no-c-format
+msgid "Password for {user}:"
+msgstr "Password per {user}:"
+
+#: src/bin/querencia-polkit-agent.rs:297
+msgid "Connecting to the authentication service…"
+msgstr "Connessione al servizio di autenticazione…"
+
+#: src/bin/querencia-polkit-agent.rs:309 src/dialog.rs:40
+msgid "_Cancel"
+msgstr "_Annulla"
+
+#: src/bin/querencia-polkit-agent.rs:313
+msgid "_Authenticate"
+msgstr "A_utentica"
+
+#: src/bin/querencia-polkit-agent.rs:430
+msgid "Enter the password and press Enter"
+msgstr "Inserire la password e premere Invio"
+
+#: src/bin/querencia-polkit-agent.rs:507
+#, no-c-format
+msgid "Wrong password, please try again ({attempt} of {max})"
+msgstr "Password errata, riprovare ({attempt} di {max})"
+
+#: src/bin/querencia-polkit-agent.rs:552
+msgid "Checking the password…"
+msgstr "Verifica della password…"
+
+#: src/dialog.rs:25
+msgid "Log _Out"
+msgstr "_Termina sessione"
+
+#: src/dialog.rs:27
+msgid "_Lock Screen"
+msgstr "_Blocca schermo"
+
+#: src/dialog.rs:30
+msgid "_Restart"
+msgstr "_Riavvia"
+
+#: src/dialog.rs:32
+msgid "_Shut Down"
+msgstr "_Spegni"
+
+#: src/dialog.rs:46
+msgid "Log Out"
+msgstr "Termina sessione"
+
+#: src/dialog.rs:47
+msgid "Lock Screen"
+msgstr "Blocca schermo"
+
+#: src/dialog.rs:48
+msgid "Restart"
+msgstr "Riavvia"
+
+#: src/dialog.rs:49
+msgid "Shut Down"
+msgstr "Spegni"
+
+#: src/dialog.rs:56
+msgid ""
+"All applications will be closed. Anything not saved there will be lost."
+msgstr ""
+"Tutte le applicazioni verranno chiuse. Ciò che non è stato salvato andrà perso."
+
+#: src/dialog.rs:60
+msgid "Log out of this system now?"
+msgstr "Terminare la sessione ora?"
+
+#: src/dialog.rs:61
+msgid ""
+"All applications of this session will be closed. Anything not saved there will be lost."
+msgstr ""
+"Tutte le applicazioni di questa sessione verranno chiuse. Ciò che non è stato salvato andrà perso."
+
+#: src/dialog.rs:68
+msgid "Lock the screen now?"
+msgstr "Bloccare lo schermo ora?"
+
+#: src/dialog.rs:69
+msgid ""
+"The password is needed to unlock the screen. The applications keep running."
+msgstr ""
+"Per sbloccare lo schermo serve la password. Le applicazioni restano in esecuzione."
+
+#: src/dialog.rs:76
+msgid "Restart this system now?"
+msgstr "Riavviare il computer ora?"
+
+#: src/dialog.rs:82
+msgid "Shut down or restart this system now?"
+msgstr "Spegnere o riavviare il computer ora?"
+
+#: src/dialog.rs:94
+#, no-c-format
+msgid "You will be automatically logged out in {n} second."
+msgid_plural "You will be automatically logged out in {n} seconds."
+msgstr[0] "La sessione verrà terminata automaticamente tra {n} secondo."
+msgstr[1] "La sessione verrà terminata automaticamente tra {n} secondi."
+
+#: src/dialog.rs:100
+#, no-c-format
+msgid "The screen will be locked automatically in {n} second."
+msgid_plural "The screen will be locked automatically in {n} seconds."
+msgstr[0] "Lo schermo verrà bloccato automaticamente tra {n} secondo."
+msgstr[1] "Lo schermo verrà bloccato automaticamente tra {n} secondi."
+
+#: src/dialog.rs:106
+#, no-c-format
+msgid "This system will be automatically restarted in {n} second."
+msgid_plural "This system will be automatically restarted in {n} seconds."
+msgstr[0] "Il computer verrà riavviato automaticamente tra {n} secondo."
+msgstr[1] "Il computer verrà riavviato automaticamente tra {n} secondi."
+
+#: src/dialog.rs:112
+#, no-c-format
+msgid "This system will be automatically shut down in {n} second."
+msgid_plural "This system will be automatically shut down in {n} seconds."
+msgstr[0] "Il computer verrà spento automaticamente tra {n} secondo."
+msgstr[1] "Il computer verrà spento automaticamente tra {n} secondi."
+
+#. TRANSLATORS: steht unter der Countdown-Zeile, solange ein anderes Fenster aktiv ist.
+#: src/dialog.rs:187
+msgid "Paused while this window is not active."
+msgstr "In pausa finché questa finestra non è attiva."
+
+#: src/dialog.rs:220
+msgid "End Session"
+msgstr "Termina sessione"
+
+#: src/dialog.rs:221
+msgid "End this session now?"
+msgstr "Terminare questa sessione ora?"
+
+#: src/dialog.rs:222
+msgid ""
+"Log Out closes all applications of this session; Restart and Shut Down stop the computer. Anything not saved will be lost."
+msgstr ""
+"«Termina sessione» chiude tutte le applicazioni di questa sessione; «Riavvia» e «Spegni» arrestano il computer. Ciò che non è stato salvato andrà perso."
+
+#: src/dialog.rs:523
+msgid "_Close"
+msgstr "_Chiudi"

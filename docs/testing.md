@@ -4,7 +4,7 @@
 cargo fmt --all --check
 env -u WAYLAND_DISPLAY -u DISPLAY cargo clippy --all-targets --locked -- -D warnings
 env -u WAYLAND_DISPLAY -u DISPLAY cargo test --locked
-python3 werkzeug/i18n.py pruefen          # .pot aktuell, de.po vollständig
+python3 werkzeug/i18n.py pruefen          # .pot aktuell, alle .po vollständig
 ```
 
 `falsches_passwort_wird_abgelehnt` ruft echtes PAM (Dienst `login`) mit dem
