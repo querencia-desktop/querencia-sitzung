@@ -1,5 +1,23 @@
 # Änderungen
 
+## 0.1.10 – 2026-10-27
+
+Sperrbildschirm in fünf Sprachen (i18n-reste, 08 QD-055):
+
+- Sperrbildschirm über den Katalog: Hinweis „Passwort eingeben und Enter
+  drücken“, Platzhalter „Passwort“, „Bitte Passwort eingeben“, „Falsches
+  Passwort“, „Passwort wird geprüft …“, „Prüfung nicht möglich: …“,
+  Feststelltaste.
+- PAM-Meldungen (`pam.rs`) über den Katalog; der Text von `pam_strerror`
+  kommt weiter von PAM.
+- Datum: Wochentage, Monate und Form („Samstag, 18. Oktober 2026“, it
+  „sabato 18 ottobre 2026“, es „sábado, 18 de octubre de 2026“, fr „samedi
+  18 octobre 2026“) aus dem Katalog statt fest deutsch; die Uhrzeit bleibt
+  24 Stunden „HH:MM“.
+- 35 neue Texte (80 statt 45), de/it/es/fr vollständig; der deutsche
+  Wortlaut ist der bisherige. PAM-Ablauf und Sperrverhalten unverändert.
+- Prüfszenario `szenario-sperre-sprache.sh` (Fotos je Sprache).
+
 ## 0.1.9 – 2026-10-26
 
 Italienisch, Spanisch, Französisch:

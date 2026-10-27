@@ -61,6 +61,16 @@ QS_BIN=<ordner>/querencia-sitzung QS_SPRACHE=en QS_GROESSE=1920x1080 \
     bash werkzeug/gui-pruefung.sh szenario-sprache.sh 1 120
 ```
 
+**Sperrbildschirm je Sprache** (`szenario-sperre-sprache.sh`, ca. 20 s,
+seit 0.1.10): Sperre mit Testpasswort, Katalog eingeblendet, Fotos von
+Hinweis, Platzhalter und Datum (`l01`), leerer Eingabe (`l02`), Punkten
+(`l03`) und falschem Passwort (`l04`), Entsperren:
+
+```bash
+for l in de en it es fr; do QS_BIN=<ordner>/querencia-sitzung QS_SPRACHE=$l QS_GROESSE=1024x768 \
+    bash werkzeug/gui-pruefung.sh szenario-sperre-sprache.sh 1 90; done
+```
+
 Für `LANGUAGE=de` braucht die Binary den Katalog daneben
 (`<ordner>/share/locale/de/LC_MESSAGES/querencia-sitzung.mo`). Ergebnis in
 `nachweis/gui/ergebnis.txt`, Bilder und Programmprotokolle daneben; die Läufe
